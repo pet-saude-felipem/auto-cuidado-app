@@ -4,7 +4,7 @@
 export interface WeightRecord {
   id: string;
   value: number; // peso em kg
-  date: string; // ISO date string
+  date: string;  // ISO date string
   notes?: string; // anotações opcionais
 }
 
@@ -29,4 +29,21 @@ export interface WeightSummary {
   previous: number;
   difference: number;
   trend: WeightTrend;
+}
+
+//implementação  "Anderson"
+export interface IWeightRepository {
+  getAll(): WeightRecord[];
+  getById(id: string): WeightRecord | undefined;
+  create(record: Omit<WeightRecord, 'id'>): WeightRecord;
+  update(id: string, data: Partial<WeightRecord>): WeightRecord | undefined;
+  remove(id: string): boolean;
+}
+
+export interface IWeightService {
+  getAllRecords(): WeightRecord[];
+  addRecord(value: number, date: string, notes?: string): WeightRecord;
+  removeRecord(id: string): boolean;
+  getChartData(): WeightChartData[];
+  getSummary(): WeightSummary | null;
 }

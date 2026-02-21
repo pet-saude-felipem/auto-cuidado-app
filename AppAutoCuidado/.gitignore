@@ -45,3 +45,6 @@ app-example
 
 .vs
 .vs/
+
+.vscode
+.vscode/

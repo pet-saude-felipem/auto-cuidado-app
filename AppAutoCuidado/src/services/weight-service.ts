@@ -1,5 +1,10 @@
-import { WeightChartData, WeightRecord, WeightSummary, WeightTrend } from '../models/weight';
-import { weightRepository } from '../repositories/weight-repository';
+import {
+  WeightChartData,
+  WeightRecord,
+  WeightSummary,
+  WeightTrend,
+} from "../models/weight";
+import { weightRepository } from "../repositories/weight-repository";
 
 class WeightService {
   /**
@@ -22,10 +27,15 @@ class WeightService {
    */
   getChartData(): WeightChartData[] {
     const records = weightRepository.getAll();
-    return records.map(r => ({
-      label: new Date(r.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      value: r.value
-    })).reverse(); // Inverte para que o gráfico flua da esquerda para a direita
+    return records
+      .map((r) => ({
+        label: new Date(r.date).toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+        }),
+        value: r.value,
+      }))
+      .reverse(); // Inverte para que o gráfico flua da esquerda para a direita
   }
 
   /**
@@ -39,10 +49,10 @@ class WeightService {
     const current = records[0].value;
     const previous = records.length > 1 ? records[1].value : current;
     const difference = Number((current - previous).toFixed(2));
-    
-    let trend: WeightTrend = 'stable';
-    if (difference < 0) trend = 'loss';
-    else if (difference > 0) trend = 'gain';
+
+    let trend: WeightTrend = "stable";
+    if (difference < 0) trend = "loss";
+    else if (difference > 0) trend = "gain";
 
     return { current, previous, difference, trend };
   }
@@ -60,9 +70,10 @@ class WeightService {
     const diffTime = Math.abs(today.getTime() - lastDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    return { 
-      shouldRemind: diffDays >= 30, /** se quiser mudar o tempo de aviso na tela */
-      lastDays: diffDays 
+    return {
+      shouldRemind:
+        diffDays >= 0 /** se quiser mudar o tempo de aviso na tela */,
+      lastDays: diffDays,
     };
   }
 }

@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
   SectionList,
   StyleSheet,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { Card } from '@/components';
 import { Colors, Fonts, Spacing } from '@/constants/theme';
-import { mockMedicationLogs, mockMedications, mockWeightRecords } from '@/src/mocks';
+import { mockWeightRecords } from '@/src/mocks';
+import { medicationService } from '@/src/services';
+import { Medication, MedicationLog } from '@/src/models';
 
 type HistoryItem = {
   id: string;
@@ -19,10 +22,13 @@ type HistoryItem = {
   status?: string;
 };
 
-function buildHistory(): { title: string; data: HistoryItem[] }[] {
+function buildHistory(
+  medications: Medication[],
+  logs: MedicationLog[],
+): { title: string; data: HistoryItem[] }[] {
   const items: HistoryItem[] = [];
 
-  // Registros de peso
+  // Registros de peso (ainda do mock enquanto não há serviço de peso)
   mockWeightRecords.forEach((r) => {
     items.push({
       id: `w-${r.id}`,
@@ -33,9 +39,9 @@ function buildHistory(): { title: string; data: HistoryItem[] }[] {
     });
   });
 
-  // Logs de medicação
-  mockMedicationLogs.forEach((log) => {
-    const med = mockMedications.find((m) => m.id === log.medicationId);
+  // Logs de medicação vindos do PostgreSQL
+  logs.forEach((log) => {
+    const med = medications.find((m) => m.id === log.medicationId);
     items.push({
       id: `m-${log.id}`,
       type: 'medication',
@@ -87,7 +93,33 @@ function HistoryItemCard({ item }: { item: HistoryItem }) {
 }
 
 export default function HistoryScreen() {
-  const [sections] = useState(buildHistory);
+  const [sections, setSections] = useState<{ title: string; data: HistoryItem[] }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [meds, logs] = await Promise.all([
+        medicationService.getAllMedications(),
+        medicationService.getRecentLogs(30),
+      ]);
+      setSections(buildHistory(meds, logs));
+    } catch (err) {
+      console.error('Erro ao carregar histórico:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.screen}>

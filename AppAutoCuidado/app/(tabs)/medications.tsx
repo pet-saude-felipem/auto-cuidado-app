@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,11 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { Card } from '@/components';
 import { Colors, Fonts, Spacing, BorderRadius } from '@/constants/theme';
-import { mockMedications, mockMedicationLogs } from '@/src/mocks';
+import { medicationService } from '@/src/services';
 import { Medication, MedicationLog } from '@/src/models';
 
 function StatusBadge({ status }: { status: 'taken' | 'missed' }) {
@@ -96,18 +97,70 @@ function MedicationItem({
 }
 
 export default function MedicationsScreen() {
-  const [medications] = useState(mockMedications);
-  const [logs] = useState(mockMedicationLogs);
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [logs, setLogs] = useState<MedicationLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleTaken = (medicationId: string) => {
-    // Ponto de integração — Gustavo implementará o service
-    console.log('Tomei:', medicationId);
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [meds, recentLogs] = await Promise.all([
+        medicationService.getAllMedications(),
+        medicationService.getRecentLogs(7),
+      ]);
+      setMedications(meds);
+      setLogs(recentLogs);
+    } catch (err) {
+      setError('Não foi possível carregar as medicações.\nVerifique se o servidor está rodando.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const handleTaken = async (medicationId: string) => {
+    const now = new Date().toTimeString().slice(0, 5);
+    try {
+      const log = await medicationService.registerUse(medicationId, now, 'taken');
+      setLogs((prev) => [...prev, log]);
+    } catch (err) {
+      console.error('Erro ao registrar tomada:', err);
+    }
   };
 
-  const handleMissed = (medicationId: string) => {
-    // Ponto de integração — Gustavo implementará o service
-    console.log('Perdi:', medicationId);
+  const handleMissed = async (medicationId: string) => {
+    const now = new Date().toTimeString().slice(0, 5);
+    try {
+      const log = await medicationService.registerUse(medicationId, now, 'missed');
+      setLogs((prev) => [...prev, log]);
+    } catch (err) {
+      console.error('Erro ao registrar perda:', err);
+    }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.screen, styles.center]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>Carregando medicações…</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={[styles.screen, styles.center]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={loadData}>
+          <Text style={styles.retryText}>Tentar novamente</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -136,6 +189,32 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  loadingText: {
+    marginTop: Spacing.sm,
+    color: Colors.textSecondary,
+    fontSize: Fonts.size.sm,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: Fonts.size.md,
+    textAlign: 'center',
+    marginBottom: Spacing.md,
+  },
+  retryBtn: {
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.sm,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: Fonts.weight.semibold,
   },
   list: {
     padding: Spacing.md,

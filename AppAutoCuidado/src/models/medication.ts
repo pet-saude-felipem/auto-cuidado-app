@@ -1,5 +1,6 @@
 /**
- * Modelo de dados para medicação
+ * Modelo de dados para medicação.
+ * Os dados são persistidos em PostgreSQL via API REST (BD_SQL/server).
  */
 export interface Medication {
   id: string;

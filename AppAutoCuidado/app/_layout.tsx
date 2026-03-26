@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -82,21 +83,23 @@ export default function RootLayout() {
     prepare();
   }, []);
 
-  if (!isReady) {
-    return <LoadingScreen tip={tip} />;
-  }
-
   return (
-    <>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: Colors.background },
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-      </Stack>
-      <StatusBar style="light" />
-    </>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {!isReady ? (
+        <LoadingScreen tip={tip} />
+      ) : (
+        <>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: Colors.background },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+          <StatusBar style="light" />
+        </>
+      )}
+    </GestureHandlerRootView>
   );
 }

@@ -1,11 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { pool } from './db';
 import medicationsRouter from './routes/medications';
 import medicationLogsRouter from './routes/medication-logs';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 const app = express();
 const PORT = Number(process.env.API_PORT ?? 3001);

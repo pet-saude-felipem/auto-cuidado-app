@@ -4,19 +4,18 @@ import { WeightRecord } from '@/src/models/weight';
 import { weightService } from '@/src/services/weight-service';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // --- SUB-COMPONENTES INTERNOS ---
 
@@ -61,6 +60,7 @@ export default function WeightScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [value, setValue] = useState('');
   const [notes, setNotes] = useState('');
+  const [reminderMsg, setReminderMsg] = useState<string | null>(null);
 
   const loadData = () => {
     setRecords(weightService.getAllRecords());
@@ -68,7 +68,7 @@ export default function WeightScreen() {
     // Verifica lembrete mensal ao carregar
     const reminder = weightService.checkMonthlyReminder();
     if (reminder.shouldRemind) {
-      Alert.alert("Atenção", `Faz ${reminder.lastDays} dias que você não registra seu peso. Vamos atualizar?`);
+      setReminderMsg(`Faz ${reminder.lastDays} dias que você não registra seu peso. Vamos atualizar?`);
     }
   };
 
@@ -92,6 +92,15 @@ export default function WeightScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <>
+            {reminderMsg && (
+              <Pressable
+                style={styles.reminderBanner}
+                onPress={() => { setReminderMsg(null); setModalVisible(true); }}
+              >
+                <Text style={styles.reminderText}>⚠️ {reminderMsg}</Text>
+                <Text style={styles.reminderAction}>Registrar agora</Text>
+              </Pressable>
+            )}
             {summary && (
               <Card title="Resumo" style={styles.summaryCard}>
                 <View style={styles.summaryRow}>
@@ -136,6 +145,7 @@ export default function WeightScreen() {
       </TouchableOpacity>
 
       {/* Modal de Cadastro */}
+      {modalVisible && (
       <Modal visible={modalVisible} transparent animationType="slide">
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -170,6 +180,7 @@ export default function WeightScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -207,4 +218,7 @@ const styles = StyleSheet.create({
   btn: { flex: 1, padding: 15, borderRadius: 8, alignItems: 'center' },
   btnCancel: { backgroundColor: '#EEE' },
   btnSave: { backgroundColor: Colors.primary },
+  reminderBanner: { backgroundColor: Colors.warning + '20', borderRadius: 10, padding: 14, marginBottom: Spacing.md, alignItems: 'center' },
+  reminderText: { fontSize: 14, color: Colors.text, textAlign: 'center', marginBottom: 6 },
+  reminderAction: { fontSize: 14, fontWeight: 'bold', color: Colors.primary },
 });

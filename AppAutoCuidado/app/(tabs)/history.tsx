@@ -4,9 +4,9 @@ import {
   Text,
   SectionList,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '@/components';
 import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { mockWeightRecords } from '@/src/mocks';

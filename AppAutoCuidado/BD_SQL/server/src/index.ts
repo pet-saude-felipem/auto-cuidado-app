@@ -1,3 +1,4 @@
+import weightRoutes from './routes/weight-records'; // ANDERSON
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -5,6 +6,8 @@ import path from 'path';
 import { pool } from './db';
 import medicationsRouter from './routes/medications';
 import medicationLogsRouter from './routes/medication-logs';
+
+
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
@@ -24,6 +27,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.use('/medications',      medicationsRouter);
 app.use('/medication-logs',  medicationLogsRouter);
+app.use('/weight-records', weightRoutes); // ANDERSON
 
 // ------------------------------------------------------------
 // Inicialização
@@ -37,3 +41,8 @@ app.listen(PORT, async () => {
   }
   console.log(`🚀 API rodando em http://localhost:${PORT}`);
 });
+
+
+// ------------------------------------------------------------
+// Inicialização
+// ------------------------------------------------------------

@@ -215,7 +215,7 @@ export default function MedicationsScreen() {
   useEffect(() => { 
     loadData();
     // Solicita permissões para notificações ao abrir o app
-    notificationService.ensurePermissions().catch(err => 
+    notificationService.ensurePermissions().catch((err: unknown) => 
       console.warn('Erro ao solicitar permissões:', err)
     );
   }, [loadData]);

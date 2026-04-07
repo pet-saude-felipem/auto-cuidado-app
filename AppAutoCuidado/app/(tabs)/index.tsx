@@ -16,7 +16,7 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// SafeAreaView removido — o header da Tab já cobre a safe area
 
 // --- SUB-COMPONENTES INTERNOS ---
 
@@ -141,17 +141,17 @@ export default function WeightScreen() {
 
   if (loading && records.length === 0) {
     return (
-      <SafeAreaView style={styles.screen}>
+      <View style={styles.screen}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.loadingText}>Carregando registros...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <View style={styles.screen}>
       {error && (
         <View style={styles.errorBanner}>
           <Text style={styles.errorText}>⚠️ {error}</Text>
@@ -314,7 +314,7 @@ export default function WeightScreen() {
           </KeyboardAvoidingView>
         </Modal>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

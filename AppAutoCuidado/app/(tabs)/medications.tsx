@@ -13,7 +13,7 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// SafeAreaView removido — o header da Tab já cobre a safe area
 import { Card } from '@/components';
 import { Colors, Fonts, Spacing, BorderRadius } from '@/constants/theme';
 import { medicationService, notificationService } from '@/src/services';
@@ -295,26 +295,26 @@ export default function MedicationsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.screen, styles.center]}>
+      <View style={[styles.screen, styles.center]}>
         <ActivityIndicator size="large" color={Colors.primary} />
         <Text style={styles.loadingText}>Carregando medicações…</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={[styles.screen, styles.center]}>
+      <View style={[styles.screen, styles.center]}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={loadData}>
           <Text style={styles.retryText}>Tentar novamente</Text>
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <View style={styles.screen}>
       <FlatList
         data={medications}
         keyExtractor={(item) => item.id}
@@ -442,7 +442,7 @@ export default function MedicationsScreen() {
           </KeyboardAvoidingView>
         </Modal>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

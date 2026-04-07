@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// SafeAreaView removido — o header da Tab já cobre a safe area
 import { Card } from '@/components';
 import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { mockWeightRecords } from '@/src/mocks';
@@ -115,14 +115,14 @@ export default function HistoryScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <View style={styles.screen}>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
@@ -137,7 +137,7 @@ export default function HistoryScreen() {
           <Text style={styles.empty}>Nenhum registro encontrado</Text>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

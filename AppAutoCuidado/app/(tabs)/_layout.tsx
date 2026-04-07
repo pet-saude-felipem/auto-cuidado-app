@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '@/constants/theme';
 
 export default function TabLayout() {
@@ -39,7 +39,7 @@ export default function TabLayout() {
           title: 'Peso',
           tabBarLabel: 'Peso',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="scale-bathroom" size={size} color={color} />
+            <Ionicons name="scale-outline" size={size} color={color} />
           ),
         }}
       />
@@ -49,7 +49,7 @@ export default function TabLayout() {
           title: 'Medicações',
           tabBarLabel: 'Medicações',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="pill" size={size} color={color} />
+            <Ionicons name="medkit-outline" size={size} color={color} />
           ),
         }}
       />
@@ -59,7 +59,7 @@ export default function TabLayout() {
           title: 'Histórico',
           tabBarLabel: 'Histórico',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="clipboard-text-clock" size={size} color={color} />
+            <Ionicons name="time-outline" size={size} color={color} />
           ),
         }}
       />

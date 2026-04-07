@@ -1,22 +1,22 @@
 import { Card } from '@/components';
 import { Colors, Spacing } from '@/constants/theme';
-import { WeightRecord } from '@/src/models/weight';
-import { weightService } from '@/src/services/weight-service';
+import { WeightRecord, WeightChartData, WeightSummary } from '@/src/models/weight';
+import { weightService } from '@/src/services';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // --- SUB-COMPONENTES INTERNOS ---
 
@@ -34,8 +34,8 @@ const TrendBadge = ({ trend }: { trend: string }) => {
   );
 };
 
-const MiniChart = ({ data }: { data: any[] }) => {
-  if (!data.length) return null;
+const MiniChart = ({ data }: { data: WeightChartData[] }) => {
+  if (!data || !data.length) return null;
   const values = data.map(d => d.value);
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -58,40 +58,127 @@ const MiniChart = ({ data }: { data: any[] }) => {
 
 export default function WeightScreen() {
   const [records, setRecords] = useState<WeightRecord[]>([]);
+  const [chartData, setChartData] = useState<WeightChartData[]>([]);
+  const [summary, setSummary] = useState<WeightSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [value, setValue] = useState('');
   const [notes, setNotes] = useState('');
+  const [reminderMsg, setReminderMsg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadData = () => {
-    setRecords(weightService.getAllRecords());
-    
-    // Verifica lembrete mensal ao carregar
-    const reminder = weightService.checkMonthlyReminder();
-    if (reminder.shouldRemind) {
-      Alert.alert("Atenção", `Faz ${reminder.lastDays} dias que você não registra seu peso. Vamos atualizar?`);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Carrega dados em paralelo
+      const [allRecords, chart, summaryData, reminder] = await Promise.all([
+        weightService.getAllRecords(),
+        weightService.getChartData(),
+        weightService.getSummary(),
+        weightService.checkMonthlyReminder(),
+      ]);
+
+      setRecords(allRecords);
+      setChartData(chart);
+      setSummary(summaryData);
+
+      if (reminder.shouldRemind) {
+        setReminderMsg(
+          `Faz ${reminder.lastDays} dias que você não registra seu peso. Vamos atualizar?`
+        );
+      } else {
+        setReminderMsg(null);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao carregar dados';
+      setError(message);
+      console.error('Erro ao carregar dados:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => { loadData(); }, []);
-
-  const handleSave = () => {
-    if (!value) return;
-    // Salva e recarrega interface
-    weightService.addRecord(parseFloat(value.replace(',', '.')), new Date().toISOString(), notes);
-    setValue(''); setNotes(''); setModalVisible(false);
+  useEffect(() => {
     loadData();
+  }, []);
+
+  const handleSave = async () => {
+    if (!value.trim()) {
+      setError('Informe um peso válido');
+      return;
+    }
+
+    const weightValue = parseFloat(value.replace(',', '.'));
+    if (isNaN(weightValue) || weightValue <= 0) {
+      setError('Peso deve ser um número maior que zero');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const today = new Date().toISOString().split('T')[0];
+      await weightService.addRecord(weightValue, today, notes || undefined);
+
+      // Recarrega os dados
+      await loadData();
+
+      setValue('');
+      setNotes('');
+      setModalVisible(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao salvar';
+      setError(message);
+      console.error('Erro ao salvar:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const summary = weightService.getSummary();
+  if (loading && records.length === 0) {
+    return (
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Carregando registros...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>⚠️ {error}</Text>
+        </View>
+      )}
+
       <FlatList
         data={records}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        refreshing={loading}
+        onRefresh={loadData}
         ListHeaderComponent={
           <>
+            {reminderMsg && (
+              <Pressable
+                style={styles.reminderBanner}
+                onPress={() => {
+                  setReminderMsg(null);
+                  setModalVisible(true);
+                }}
+              >
+                <Text style={styles.reminderText}>⚠️ {reminderMsg}</Text>
+                <Text style={styles.reminderAction}>Registrar agora</Text>
+              </Pressable>
+            )}
+
             {summary && (
               <Card title="Resumo" style={styles.summaryCard}>
                 <View style={styles.summaryRow}>
@@ -101,7 +188,17 @@ export default function WeightScreen() {
                   </View>
                   <View style={styles.summaryItem}>
                     <Text style={styles.summaryLabel}>Variação</Text>
-                    <Text style={[styles.summaryValue, {color: summary.difference <= 0 ? Colors.success : Colors.error}]}>
+                    <Text
+                      style={[
+                        styles.summaryValue,
+                        {
+                          color:
+                            summary.difference <= 0
+                              ? Colors.success
+                              : Colors.error,
+                        },
+                      ]}
+                    >
                       {summary.difference > 0 ? '+' : ''}{summary.difference}kg
                     </Text>
                   </View>
@@ -110,9 +207,11 @@ export default function WeightScreen() {
               </Card>
             )}
 
-            <Card title="Evolução" style={styles.chartCard}>
-              <MiniChart data={weightService.getChartData()} />
-            </Card>
+            {chartData.length > 0 && (
+              <Card title="Evolução" style={styles.chartCard}>
+                <MiniChart data={chartData} />
+              </Card>
+            )}
 
             <Text style={styles.sectionTitle}>Histórico de Registros</Text>
           </>
@@ -122,54 +221,99 @@ export default function WeightScreen() {
             <View style={styles.recordRow}>
               <View>
                 <Text style={styles.recordWeight}>{item.value} kg</Text>
-                <Text style={styles.recordDate}>{new Date(item.date).toLocaleDateString('pt-BR')}</Text>
+                <Text style={styles.recordDate}>
+                  {new Date(item.date).toLocaleDateString('pt-BR')}
+                </Text>
               </View>
-              {item.notes && <Text style={styles.recordNotes} numberOfLines={2}>{item.notes}</Text>}
+              {item.notes && (
+                <Text style={styles.recordNotes} numberOfLines={2}>
+                  {item.notes}
+                </Text>
+              )}
             </View>
           </Card>
         )}
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Nenhum registro de peso ainda</Text>
+              <Text style={styles.emptySubtext}>
+                Clique no + para começar
+              </Text>
+            </View>
+          ) : null
+        }
       />
 
       {/* Botão para abrir Modal */}
-      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setModalVisible(true)}
+        activeOpacity={0.7}
+      >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
 
       {/* Modal de Cadastro */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Novo Registro</Text>
-            
-            <Text style={styles.inputLabel}>Peso (kg)</Text>
-            <TextInput 
-               style={styles.input} 
-               placeholder="Ex: 80.5" 
-               keyboardType="numeric" 
-               value={value} 
-               onChangeText={setValue} 
+      {modalVisible && (
+        <Modal visible={modalVisible} transparent animationType="slide">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalOverlay}
+          >
+            <Pressable
+              style={styles.modalBackdrop}
+              onPress={() => !saving && setModalVisible(false)}
             />
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Novo Registro</Text>
 
-            <Text style={styles.inputLabel}>Notas</Text>
-            <TextInput 
-               style={[styles.input, {height: 60}]} 
-               placeholder="Como se sente hoje?" 
-               multiline 
-               value={notes} 
-               onChangeText={setNotes} 
-            />
+              <Text style={styles.inputLabel}>Peso (kg)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: 80.5"
+                keyboardType="decimal-pad"
+                value={value}
+                onChangeText={setValue}
+                editable={!saving}
+              />
 
-            <View style={styles.modalButtons}>
-              <Pressable style={[styles.btn, styles.btnCancel]} onPress={() => setModalVisible(false)}>
-                <Text>Cancelar</Text>
-              </Pressable>
-              <Pressable style={[styles.btn, styles.btnSave]} onPress={handleSave}>
-                <Text style={{color: '#FFF', fontWeight: 'bold'}}>Salvar</Text>
-              </Pressable>
+              <Text style={styles.inputLabel}>Notas (opcional)</Text>
+              <TextInput
+                style={[styles.input, { height: 60 }]}
+                placeholder="Como se sente hoje?"
+                multiline
+                value={notes}
+                onChangeText={setNotes}
+                editable={!saving}
+              />
+
+              <View style={styles.modalButtons}>
+                <Pressable
+                  style={[styles.btn, styles.btnCancel]}
+                  onPress={() => setModalVisible(false)}
+                  disabled={saving}
+                >
+                  <Text style={{ color: Colors.text }}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.btn, styles.btnSave, saving && styles.btnDisabled]}
+                  onPress={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={{ color: '#FFF', fontWeight: 'bold' }}>
+                      Salvar
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+          </KeyboardAvoidingView>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -207,4 +351,16 @@ const styles = StyleSheet.create({
   btn: { flex: 1, padding: 15, borderRadius: 8, alignItems: 'center' },
   btnCancel: { backgroundColor: '#EEE' },
   btnSave: { backgroundColor: Colors.primary },
+  btnDisabled: { opacity: 0.6 },
+  reminderBanner: { backgroundColor: Colors.warning + '20', borderRadius: 10, padding: 14, marginBottom: Spacing.md, alignItems: 'center' },
+  reminderText: { fontSize: 14, color: Colors.text, textAlign: 'center', marginBottom: 6 },
+  reminderAction: { fontSize: 14, fontWeight: 'bold', color: Colors.primary },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 10, color: Colors.textSecondary },
+  errorBanner: { backgroundColor: Colors.error + '20', padding: 12, marginHorizontal: Spacing.md, marginTop: Spacing.md, borderRadius: 8 },
+  errorText: { color: Colors.error, fontWeight: 'bold' },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 16, color: Colors.textSecondary, marginBottom: 8 },
+  emptySubtext: { fontSize: 14, color: Colors.textLight },
+  modalBackdrop: { flex: 1 },
 });

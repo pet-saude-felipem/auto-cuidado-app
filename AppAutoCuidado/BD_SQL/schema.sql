@@ -31,3 +31,12 @@ CREATE TABLE IF NOT EXISTS medication_logs (
 -- Índices úteis para consultas frequentes
 CREATE INDEX IF NOT EXISTS idx_logs_medication_id ON medication_logs(medication_id);
 CREATE INDEX IF NOT EXISTS idx_logs_date          ON medication_logs(date DESC);
+
+
+-- ANDERSON - Tabela de registros de peso (Antropometria)
+CREATE TABLE IF NOT EXISTS weight_records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    value NUMERIC NOT NULL,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    notes TEXT
+);

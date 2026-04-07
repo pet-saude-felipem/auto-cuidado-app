@@ -2,10 +2,6 @@ import { Medication, MedicationLog, MedicationStatus } from '@/src/models';
 import { IMedicationService } from './medication-service';
 import { medicationRepository } from '@/src/repositories/medication-repository-impl';
 
-/**
- * Implementação concreta do serviço de medicações.
- * Aplica regras de negócio e delega persistência ao repositório.
- */
 export class MedicationService implements IMedicationService {
   async getAllMedications(): Promise<Medication[]> {
     return medicationRepository.getAllMedications();
@@ -36,5 +32,4 @@ export class MedicationService implements IMedicationService {
   }
 }
 
-/** Instância singleton pronta para usar nas telas */
 export const medicationService = new MedicationService();

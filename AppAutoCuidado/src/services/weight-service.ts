@@ -6,27 +6,41 @@ import {
 } from "../models/weight";
 import { weightRepository } from "../repositories/weight-repository";
 
+/**
+ * Implementação do serviço de peso.
+ * Aplica regras de negócio e delega persistência ao repositório.
+ */
 class WeightService {
   /**
    * Retorna todos os registros ordenados do mais recente para o mais antigo
    */
-  getAllRecords(): WeightRecord[] {
-    return weightRepository.getAll();
+  async getAllRecords(): Promise<WeightRecord[]> {
+    return await weightRepository.getAll();
   }
 
   /**
    * Adiciona um novo registro e dispara a atualização dos dados
    */
-  addRecord(value: number, date: string, notes?: string): WeightRecord {
-    return weightRepository.create({ value, date, notes });
+  async addRecord(value: number, date: string, notes?: string): Promise<WeightRecord> {
+    if (value <= 0) {
+      throw new Error('Peso deve ser maior que zero');
+    }
+    return await weightRepository.create({ value, date, notes });
+  }
+
+  /**
+   * Remove um registro de peso
+   */
+  async removeRecord(id: string): Promise<boolean> {
+    return await weightRepository.remove(id);
   }
 
   /**
    * Formata os dados para o componente de gráfico (Ordem cronológica)
    * Checklist: Estrutura para gráficos temporais
    */
-  getChartData(): WeightChartData[] {
-    const records = weightRepository.getAll();
+  async getChartData(): Promise<WeightChartData[]> {
+    const records = await weightRepository.getAll();
     return records
       .map((r) => ({
         label: new Date(r.date).toLocaleDateString("pt-BR", {
@@ -42,8 +56,8 @@ class WeightService {
    * Calcula o resumo e a tendência (ganho/perda)
    * Checklist: Cálculo de tendência
    */
-  getSummary(): WeightSummary | null {
-    const records = weightRepository.getAll();
+  async getSummary(): Promise<WeightSummary | null> {
+    const records = await weightRepository.getAll();
     if (records.length === 0) return null;
 
     const current = records[0].value;
@@ -61,8 +75,8 @@ class WeightService {
    * Lógica para o lembrete mensal
    * Checklist: Lembrete mensal de pesagem
    */
-  checkMonthlyReminder(): { shouldRemind: boolean; lastDays: number } {
-    const records = weightRepository.getAll();
+  async checkMonthlyReminder(): Promise<{ shouldRemind: boolean; lastDays: number }> {
+    const records = await weightRepository.getAll();
     if (records.length === 0) return { shouldRemind: true, lastDays: 0 };
 
     const lastDate = new Date(records[0].date);
@@ -71,8 +85,7 @@ class WeightService {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return {
-      shouldRemind:
-        diffDays >= 0 /** se quiser mudar o tempo de aviso na tela */,
+      shouldRemind: diffDays >= 30, // Lembrete após 30 dias
       lastDays: diffDays,
     };
   }

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { getRandomTip } from '@/src/mocks';
+
+// Ignora aviso de Push Notifications no Expo Go (só usamos notificações locais)
+LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
 
 SplashScreen.preventAutoHideAsync();
 

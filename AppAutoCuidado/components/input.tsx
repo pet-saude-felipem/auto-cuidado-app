@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: Fonts.size.sm,
-    fontWeight: Fonts.weight.medium,
+    fontFamily: Fonts.family.regular,
     color: Colors.textSecondary,
     marginBottom: Spacing.xs,
   },
@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm + 4,
     paddingHorizontal: Spacing.md,
     fontSize: Fonts.size.md,
+    fontFamily: Fonts.family.regular,
     color: Colors.text,
     minHeight: 48,
   },

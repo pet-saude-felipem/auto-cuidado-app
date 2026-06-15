@@ -1,5 +1,5 @@
 import { Card } from '@/components';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { WeightRecord, WeightChartData, WeightSummary } from '@/src/models/weight';
 import { weightService } from '@/src/services';
 import React, { useEffect, useState } from 'react';
@@ -304,7 +304,7 @@ export default function WeightScreen() {
                   {saving ? (
                     <ActivityIndicator size="small" color="#FFF" />
                   ) : (
-                    <Text style={{ color: '#FFF', fontWeight: 'bold' }}>
+                    <Text style={{ color: '#FFF', fontFamily: Fonts.family.bold }}>
                       Salvar
                     </Text>
                   )}
@@ -325,26 +325,26 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', justifyContent: 'space-around' },
   summaryItem: { alignItems: 'center' },
   summaryLabel: { fontSize: 12, color: Colors.textSecondary },
-  summaryValue: { fontSize: 22, fontWeight: 'bold' },
+  summaryValue: { fontSize: 22, fontFamily: Fonts.family.bold },
   badge: { alignSelf: 'center', marginTop: 12, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20 },
-  badgeText: { fontWeight: 'bold', fontSize: 12 },
+  badgeText: { fontFamily: Fonts.family.bold, fontSize: 12 },
   chartCard: { marginBottom: Spacing.md },
   chartBars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 100, marginTop: 10 },
   chartColumn: { alignItems: 'center' },
   chartBar: { width: 14, borderRadius: 4 },
   chartValue: { fontSize: 9, color: Colors.textSecondary, marginBottom: 2 },
   chartLabel: { fontSize: 9, marginTop: 4 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginVertical: 10 },
+  sectionTitle: { fontSize: 18, fontFamily: Fonts.family.bold, marginVertical: 10 },
   recordCard: { marginBottom: 8 },
   recordRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  recordWeight: { fontSize: 18, fontWeight: 'bold', color: Colors.primary },
+  recordWeight: { fontSize: 18, fontFamily: Fonts.family.bold, color: Colors.primary },
   recordDate: { fontSize: 12, color: Colors.textSecondary },
   recordNotes: { fontSize: 12, color: Colors.textLight, maxWidth: '50%', textAlign: 'right' },
   fab: { position: 'absolute', right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-  fabIcon: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
+  fabIcon: { color: '#FFF', fontSize: 24, fontFamily: Fonts.family.bold },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
   modalContent: { backgroundColor: '#FFF', borderRadius: 12, padding: 20 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  modalTitle: { fontSize: 18, fontFamily: Fonts.family.bold, marginBottom: 20, textAlign: 'center' },
   inputLabel: { fontSize: 12, color: Colors.textSecondary, marginBottom: 5 },
   input: { backgroundColor: '#F5F5F5', borderRadius: 8, padding: 12, marginBottom: 15 },
   modalButtons: { flexDirection: 'row', gap: 10 },
@@ -354,11 +354,11 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.6 },
   reminderBanner: { backgroundColor: Colors.warning + '20', borderRadius: 10, padding: 14, marginBottom: Spacing.md, alignItems: 'center' },
   reminderText: { fontSize: 14, color: Colors.text, textAlign: 'center', marginBottom: 6 },
-  reminderAction: { fontSize: 14, fontWeight: 'bold', color: Colors.primary },
+  reminderAction: { fontSize: 14, fontFamily: Fonts.family.bold, color: Colors.primary },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 10, color: Colors.textSecondary },
   errorBanner: { backgroundColor: Colors.error + '20', padding: 12, marginHorizontal: Spacing.md, marginTop: Spacing.md, borderRadius: 8 },
-  errorText: { color: Colors.error, fontWeight: 'bold' },
+  errorText: { color: Colors.error, fontFamily: Fonts.family.bold },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   emptyText: { fontSize: 16, color: Colors.textSecondary, marginBottom: 8 },
   emptySubtext: { fontSize: 14, color: Colors.textLight },

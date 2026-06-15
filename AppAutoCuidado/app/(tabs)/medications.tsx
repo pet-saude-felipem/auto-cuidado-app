@@ -432,7 +432,7 @@ export default function MedicationsScreen() {
                     <Text>Cancelar</Text>
                   </Pressable>
                   <Pressable style={[styles.btn, styles.btnSave]} onPress={handleAddMedication} disabled={saving}>
-                    <Text style={{ color: '#FFF', fontWeight: 'bold' }}>
+                    <Text style={{ color: '#FFF', fontFamily: Fonts.family.bold }}>
                       {saving ? 'Salvando…' : 'Salvar'}
                     </Text>
                   </Pressable>
@@ -458,10 +458,12 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: Spacing.sm,
+    fontFamily: Fonts.family.regular,
     color: Colors.textSecondary,
     fontSize: Fonts.size.sm,
   },
   errorText: {
+    fontFamily: Fonts.family.regular,
     color: Colors.error,
     fontSize: Fonts.size.md,
     textAlign: 'center',
@@ -475,7 +477,7 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: '#fff',
-    fontWeight: Fonts.weight.semibold,
+    fontFamily: Fonts.family.bold,
   },
   list: {
     padding: Spacing.md,
@@ -483,7 +485,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: Fonts.size.lg,
-    fontWeight: Fonts.weight.bold,
+    fontFamily: Fonts.family.bold,
     color: Colors.text,
     marginBottom: Spacing.md,
   },
@@ -499,23 +501,25 @@ const styles = StyleSheet.create({
   },
   medName: {
     fontSize: Fonts.size.lg,
-    fontWeight: Fonts.weight.bold,
+    fontFamily: Fonts.family.bold,
     color: Colors.text,
   },
   medDosage: {
     fontSize: Fonts.size.sm,
+    fontFamily: Fonts.family.regular,
     color: Colors.textSecondary,
     marginTop: 2,
   },
   medTimes: {
     fontSize: Fonts.size.sm,
+    fontFamily: Fonts.family.regular,
     color: Colors.primary,
     marginTop: 4,
   },
   medNotes: {
     fontSize: Fonts.size.xs,
+    fontFamily: Fonts.family.italic,
     color: Colors.textLight,
-    fontStyle: 'italic',
     marginTop: 4,
   },
   actions: {
@@ -541,12 +545,12 @@ const styles = StyleSheet.create({
   },
   takenText: {
     color: Colors.success,
-    fontWeight: Fonts.weight.semibold,
+    fontFamily: Fonts.family.bold,
     fontSize: Fonts.size.sm,
   },
   missedText: {
     color: Colors.error,
-    fontWeight: Fonts.weight.semibold,
+    fontFamily: Fonts.family.bold,
     fontSize: Fonts.size.sm,
   },
   todayLogs: {
@@ -561,10 +565,11 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: Fonts.size.xs,
-    fontWeight: Fonts.weight.medium,
+    fontFamily: Fonts.family.regular,
   },
   emptyText: {
     textAlign: 'center',
+    fontFamily: Fonts.family.regular,
     color: Colors.textSecondary,
     fontSize: Fonts.size.md,
     marginTop: Spacing.xl,
@@ -583,7 +588,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 5,
   },
-  fabIcon: { color: '#FFF', fontSize: 24, fontWeight: 'bold' as const },
+  fabIcon: { color: '#FFF', fontSize: 24, fontFamily: Fonts.family.bold },
   // --- Modal ---
   modalOverlay: {
     flex: 1,
@@ -596,9 +601,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: { backgroundColor: '#FFF', borderRadius: 12, padding: 20 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold' as const, marginBottom: 20, textAlign: 'center' as const },
-  inputLabel: { fontSize: 12, color: Colors.textSecondary, marginBottom: 5, marginTop: 4 },
-  input: { backgroundColor: '#F5F5F5', borderRadius: 8, padding: 12, marginBottom: 4 },
+  modalTitle: { fontSize: 18, fontFamily: Fonts.family.bold, marginBottom: 20, textAlign: 'center' as const },
+  inputLabel: { fontSize: 12, fontFamily: Fonts.family.regular, color: Colors.textSecondary, marginBottom: 5, marginTop: 4 },
+  input: { backgroundColor: '#F5F5F5', borderRadius: 8, padding: 12, marginBottom: 4, fontFamily: Fonts.family.regular },
   inputError: { borderWidth: 1, borderColor: Colors.error },
   errorMsg: { color: Colors.error, fontSize: 11, marginBottom: 8 },
   // --- Frequência ---
@@ -611,15 +616,15 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
   },
   freqBtnActive: { backgroundColor: Colors.primary },
-  freqText: { fontSize: 13, color: Colors.textSecondary },
-  freqTextActive: { color: '#FFF', fontWeight: 'bold' as const },
+  freqText: { fontSize: 13, fontFamily: Fonts.family.regular, color: Colors.textSecondary },
+  freqTextActive: { color: '#FFF', fontFamily: Fonts.family.bold },
   // --- Horários ---
   timeRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 4 },
   timeInput: { flex: 1 },
   removeTimeBtn: { padding: 8 },
-  removeTimeTxt: { color: Colors.error, fontSize: 16, fontWeight: 'bold' as const },
+  removeTimeTxt: { color: Colors.error, fontSize: 16, fontFamily: Fonts.family.bold },
   addTimeBtn: { marginBottom: 12 },
-  addTimeTxt: { color: Colors.primary, fontSize: 13, fontWeight: '600' as const },
+  addTimeTxt: { color: Colors.primary, fontSize: 13, fontFamily: Fonts.family.bold },
   // --- Botões ---
   modalButtons: { flexDirection: 'row' as const, gap: 10, marginTop: 12 },
   btn: { flex: 1, padding: 15, borderRadius: 8, alignItems: 'center' as const },

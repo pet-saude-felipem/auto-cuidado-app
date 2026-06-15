@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
 import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { getRandomTip } from '@/src/mocks';
 
@@ -40,11 +41,12 @@ const loadingStyles = StyleSheet.create({
   },
   title: {
     fontSize: Fonts.size.title,
-    fontWeight: Fonts.weight.bold,
+    fontFamily: Fonts.family.bold,
     color: Colors.textOnPrimary,
   },
   subtitle: {
     fontSize: Fonts.size.md,
+    fontFamily: Fonts.family.regular,
     color: Colors.textOnPrimary + 'CC',
     marginTop: Spacing.xs,
   },
@@ -60,12 +62,13 @@ const loadingStyles = StyleSheet.create({
   },
   tipLabel: {
     fontSize: Fonts.size.sm,
-    fontWeight: Fonts.weight.semibold,
+    fontFamily: Fonts.family.bold,
     color: Colors.textOnPrimary + 'AA',
     marginBottom: Spacing.xs,
   },
   tipText: {
     fontSize: Fonts.size.md,
+    fontFamily: Fonts.family.regular,
     color: Colors.textOnPrimary,
     textAlign: 'center',
     lineHeight: 22,
@@ -76,7 +79,15 @@ export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const [tip] = useState(getRandomTip);
 
+  const [fontsLoaded] = useFonts({
+    'OpenDyslexic-Regular': require('../assets/fonts/opendyslexic-0.92/OpenDyslexic-Regular.otf'),
+    'OpenDyslexic-Bold': require('../assets/fonts/opendyslexic-0.92/OpenDyslexic-Bold.otf'),
+    'OpenDyslexic-Italic': require('../assets/fonts/opendyslexic-0.92/OpenDyslexic-Italic.otf'),
+    'OpenDyslexic-BoldItalic': require('../assets/fonts/opendyslexic-0.92/OpenDyslexic-BoldItalic.otf'),
+  });
+
   useEffect(() => {
+    if (!fontsLoaded) return;
     const prepare = async () => {
       await SplashScreen.hideAsync();
       // Simula carregamento (futuro: carregar dados locais)
@@ -84,7 +95,7 @@ export default function RootLayout() {
       setIsReady(true);
     };
     prepare();
-  }, []);
+  }, [fontsLoaded]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

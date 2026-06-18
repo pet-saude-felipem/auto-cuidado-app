@@ -36,6 +36,12 @@ export const Colors = {
 };
 
 export const Fonts = {
+  family: {
+    regular: 'OpenDyslexic-Regular',
+    bold: 'OpenDyslexic-Bold',
+    italic: 'OpenDyslexic-Italic',
+    boldItalic: 'OpenDyslexic-BoldItalic',
+  },
   size: {
     xs: 12,
     sm: 14,

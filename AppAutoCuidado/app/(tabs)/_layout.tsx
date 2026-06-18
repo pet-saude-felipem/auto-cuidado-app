@@ -14,7 +14,7 @@ export default function TabLayout() {
         },
         headerTintColor: Colors.textOnPrimary,
         headerTitleStyle: {
-          fontWeight: Fonts.weight.bold,
+          fontFamily: Fonts.family.bold,
           fontSize: Fonts.size.xl,
         },
         tabBarActiveTintColor: Colors.tabBarActive,
@@ -29,7 +29,7 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           fontSize: Fonts.size.xs,
-          fontWeight: Fonts.weight.semibold,
+          fontFamily: Fonts.family.bold,
         },
       }}
     >

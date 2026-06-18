@@ -21,7 +21,7 @@ router.get('/', async (_req: Request, res: Response) => {
     console.error('ERRO AO BUSCAR PESOS:', err);
     res
       .status(500)
-      .json({ error: 'Erro ao buscar pesos no servidor.', detail: String(err) });
+      .json({ error: 'Erro interno no servidor.' });
   }
 });
 
@@ -46,7 +46,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     console.error('ERRO AO BUSCAR PESO:', err);
     res
       .status(500)
-      .json({ error: 'Erro ao buscar peso.', detail: String(err) });
+      .json({ error: 'Erro interno no servidor.' });
   }
 });
 
@@ -83,7 +83,7 @@ router.post('/', async (req: Request, res: Response) => {
     console.error('ERRO AO REGISTRAR PESO:', err);
     res
       .status(500)
-      .json({ error: 'Erro ao registrar peso no banco.', detail: String(err) });
+      .json({ error: 'Erro interno no servidor.' });
   }
 });
 
@@ -131,7 +131,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
     console.error('ERRO AO ATUALIZAR PESO:', err);
     res
       .status(500)
-      .json({ error: 'Erro ao atualizar peso.', detail: String(err) });
+      .json({ error: 'Erro interno no servidor.' });
   }
 });
 
@@ -154,7 +154,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     console.error('ERRO AO DELETAR PESO:', err);
     res
       .status(500)
-      .json({ error: 'Erro ao deletar peso.', detail: String(err) });
+      .json({ error: 'Erro interno no servidor.' });
   }
 });
 

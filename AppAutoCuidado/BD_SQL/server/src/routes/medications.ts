@@ -13,7 +13,8 @@ router.get('/', async (_req: Request, res: Response) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar medicações', detail: String(err) });
+    console.error('Erro ao buscar medicações:', err);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 });
 
@@ -29,7 +30,8 @@ router.get('/:id', async (req: Request, res: Response) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Medicação não encontrada' });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar medicação', detail: String(err) });
+    console.error('Erro ao buscar medicação:', err);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 });
 
@@ -58,7 +60,8 @@ router.post('/', async (req: Request, res: Response) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao criar medicação', detail: String(err) });
+    console.error('Erro ao criar medicação:', err);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 });
 
@@ -92,7 +95,8 @@ router.patch('/:id', async (req: Request, res: Response) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Medicação não encontrada' });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao atualizar medicação', detail: String(err) });
+    console.error('Erro ao atualizar medicação:', err);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 });
 
@@ -105,7 +109,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
     if (!rowCount) return res.status(404).json({ error: 'Medicação não encontrada' });
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao remover medicação', detail: String(err) });
+    console.error('Erro ao remover medicação:', err);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 });
 

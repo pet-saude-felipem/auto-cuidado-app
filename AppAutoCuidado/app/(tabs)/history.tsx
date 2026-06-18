@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: Fonts.size.sm,
-    fontWeight: Fonts.weight.semibold,
+    fontFamily: Fonts.family.bold,
     color: Colors.textSecondary,
     textTransform: 'capitalize',
     marginTop: Spacing.md,
@@ -174,15 +174,17 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: Fonts.size.md,
-    fontWeight: Fonts.weight.bold,
+    fontFamily: Fonts.family.bold,
   },
   itemSubtitle: {
     fontSize: Fonts.size.sm,
+    fontFamily: Fonts.family.regular,
     color: Colors.textSecondary,
     marginTop: 2,
   },
   empty: {
     textAlign: 'center',
+    fontFamily: Fonts.family.regular,
     color: Colors.textLight,
     marginTop: Spacing.xxl,
     fontSize: Fonts.size.md,

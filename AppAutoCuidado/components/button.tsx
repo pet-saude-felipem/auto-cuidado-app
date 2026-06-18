@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: Fonts.size.md,
-    fontWeight: Fonts.weight.semibold,
+    fontFamily: Fonts.family.bold,
     color: Colors.textOnPrimary,
   },
   primaryText: {

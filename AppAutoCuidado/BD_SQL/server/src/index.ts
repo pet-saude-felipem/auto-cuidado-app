@@ -15,7 +15,10 @@ const PORT = Number(process.env.API_PORT ?? 3001);
 // ----------------------------------------------------------
 // Middlewares globais
 // ------------------------------------------------------------
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:8081', 'http://10.0.2.2:8081'],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+}));
 app.use(express.json());
 
 // ------------------------------------------------------------

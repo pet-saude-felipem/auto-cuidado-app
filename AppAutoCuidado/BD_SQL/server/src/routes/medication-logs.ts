@@ -15,7 +15,12 @@ router.get('/', async (req: Request, res: Response) => {
   let idx = 1;
 
   if (days) {
-    conditions.push(`date >= CURRENT_DATE - INTERVAL '${Number(days)} days'`);
+    const parsedDays = parseInt(String(days), 10);
+    if (isNaN(parsedDays) || parsedDays <= 0) {
+      return res.status(400).json({ error: 'Parâmetro "days" deve ser um inteiro positivo.' });
+    }
+    conditions.push(`date >= CURRENT_DATE - ($${idx++} * INTERVAL '1 day')`);
+    values.push(parsedDays);
   }
   if (medicationId) {
     conditions.push(`medication_id = $${idx++}`);
@@ -39,7 +44,8 @@ router.get('/', async (req: Request, res: Response) => {
     }));
     res.json(formatted);
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar logs', detail: String(err) });
+    console.error('Erro ao buscar logs:', err);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 });
 
@@ -60,6 +66,11 @@ router.post('/', async (req: Request, res: Response) => {
       .json({ error: 'Campos obrigatórios: medicationId, date, time, status' });
   }
 
+  const ALLOWED_STATUS = ['taken', 'missed'] as const;
+  if (!ALLOWED_STATUS.includes(status as typeof ALLOWED_STATUS[number])) {
+    return res.status(400).json({ error: 'status deve ser "taken" ou "missed".' });
+  }
+
   try {
     const { rows } = await pool.query(
       `INSERT INTO medication_logs (medication_id, date, time, status)
@@ -73,7 +84,8 @@ router.post('/', async (req: Request, res: Response) => {
     };
     res.status(201).json(log);
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao registrar uso', detail: String(err) });
+    console.error('Erro ao registrar uso:', err);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 });
 

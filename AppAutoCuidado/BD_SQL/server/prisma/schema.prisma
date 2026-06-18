@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Medication {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String          @db.VarChar(100)
+  dosage    String          @db.VarChar(50)
+  frequency String          @db.VarChar(5)
+  times     String[]
+  notes     String?
+  logs      MedicationLog[]
+
+  @@map("medications")
+}
+
+model MedicationLog {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  medicationId String     @map("medication_id") @db.Uuid
+  date         DateTime   @db.Date
+  time         String     @db.VarChar(5)
+  status       String     @db.VarChar(10)
+  medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  @@index([medicationId], map: "idx_logs_medication_id")
+  @@index([date(sort: Desc)], map: "idx_logs_date")
+  @@map("medication_logs")
+}
+
+model WeightRecord {
+  id    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  value Decimal  @db.Decimal
+  date  DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
+  notes String?
+
+  @@map("weight_records")
+}

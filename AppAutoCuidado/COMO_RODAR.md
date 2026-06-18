@@ -3,41 +3,54 @@
 ## Pré-requisitos
 
 - [Node.js](https://nodejs.org/) (v18 ou superior)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) **ou** [PostgreSQL](https://www.postgresql.org/download/windows/) instalado localmente
-- Aplicativo [Expo Go](https://expo.dev/go) no celular (opcional, para testar em dispositivo físico)
+- [PostgreSQL](https://www.postgresql.org/download/) instalado e em execução
+- Aplicativo [Expo Go](https://expo.dev/go) no celular (opcional)
 
 ---
 
-## 1. Banco de Dados (PostgreSQL)
+## Ordem de inicialização
 
-### Opção A — Docker (recomendado)
-
-```bash
-cd BD_SQL
-docker-compose up -d
+```
+1. PostgreSQL        →  serviço rodando localmente
+2. Banco (Prisma)    →  npm run db:setup         (pasta BD_SQL/server/)
+3. API REST          →  npm run dev              (pasta BD_SQL/server/)
+4. Expo              →  npx expo start           (pasta raiz AppAutoCuidado/)
 ```
 
-O Docker irá:
-- Subir o PostgreSQL na porta `5432`
-- Criar o banco `autocuidado`
-- Executar o schema e popular com os dados iniciais automaticamente
+---
 
-### Opção B — PostgreSQL instalado localmente
+## 1. Banco de dados (PostgreSQL + Prisma)
 
-1. Abra o **psql** como superuser e execute:
+### Criar o banco (primeira vez)
+
+No **psql** ou pgAdmin, execute:
 
 ```sql
 CREATE USER autocuidado_user WITH PASSWORD 'autocuidado_pass';
 CREATE DATABASE autocuidado OWNER autocuidado_user;
-\c autocuidado
 ```
 
-2. Execute os arquivos SQL:
+> Ajuste usuário/senha no `.env` se usar credenciais diferentes.
 
-```sql
-\i 'caminho_da_pasta_no_seu_PC/BD_SQL/schema.sql'
-\i 'caminho_da_pasta_no_seu_PC/BD_SQL/seed.sql'
+### Aplicar schema e dados iniciais
+
+```bash
+cd BD_SQL/server
+npm install
+npm run db:setup
 ```
+
+O comando `db:setup` aplica as migrations e popula o banco com os dados iniciais (seed).
+
+### Comandos úteis do Prisma
+
+| Comando | O que faz |
+|---------|-----------|
+| `npm run db:setup` | Aplica migrations + seed (setup completo) |
+| `npm run db:seed` | Repopula dados iniciais |
+| `npm run db:reset` | Apaga tudo, reaplica migrations e seed |
+| `npm run prisma:migrate` | Cria/aplica migration em desenvolvimento |
+| `npm run prisma:studio` | Interface visual do banco |
 
 ---
 
@@ -45,20 +58,16 @@ CREATE DATABASE autocuidado OWNER autocuidado_user;
 
 ```bash
 cd BD_SQL/server
-npm install
 npm run dev
 ```
 
 A API ficará disponível em `http://localhost:3001`.
 
-Para verificar se está funcionando:
-```
-GET http://localhost:3001/health
-```
+Teste: `GET http://localhost:3001/health`
 
 ### Variáveis de ambiente
 
-O arquivo `BD_SQL/server/.env` já está configurado com os valores padrão:
+Arquivo `BD_SQL/server/.env`:
 
 ```env
 POSTGRES_HOST=localhost
@@ -67,6 +76,7 @@ POSTGRES_DB=autocuidado
 POSTGRES_USER=autocuidado_user
 POSTGRES_PASSWORD=autocuidado_pass
 API_PORT=3001
+DATABASE_URL=postgresql://autocuidado_user:autocuidado_pass@localhost:5432/autocuidado?schema=public
 ```
 
 ---
@@ -74,12 +84,9 @@ API_PORT=3001
 ## 3. Aplicativo Expo (Frontend)
 
 ```bash
-cd AppAutoCuidado   # raiz do projeto Expo
 npm install
 npx expo start
 ```
-
-Após iniciar, escolha a plataforma:
 
 | Tecla | Ação |
 |-------|------|
@@ -89,44 +96,9 @@ Após iniciar, escolha a plataforma:
 
 ### Dispositivo físico
 
-Escaneie o QR Code com o app **Expo Go**.
+Escaneie o QR Code com o **Expo Go**.
 
-> **Atenção:** em dispositivos físicos ou no emulador Android, altere a URL da API em `src/api/config.ts`:
-> ```ts
-> // Emulador Android
-> export const API_BASE_URL = 'http://10.0.2.2:3001';
->
-> // Dispositivo físico (use o IP da sua máquina)
-> export const API_BASE_URL = 'http://192.168.x.x:3001';
-> ```
-
----
-
-## Instalando as dependências
-
-> Execute este passo sempre que clonar o repositório ou após excluir as pastas `node_modules/` (equivalente ao `target` do Java — não são versionadas).
-
-**Expo (raiz do projeto):**
-```bash
-npm install
-```
-
-**Servidor (API REST):**
-```bash
-cd BD_SQL/server
-npm install
-```
-
----
-
-## Ordem de inicialização
-
-```
-0. Instalar deps   →  npm install            (raiz e BD_SQL/server/)
-1. Banco de dados  →  docker-compose up -d   (pasta BD_SQL/)
-2. API REST        →  npm run dev             (pasta BD_SQL/server/)
-3. Expo            →  npx expo start          (pasta raiz)
-```
+> Em dispositivos físicos, ajuste a URL da API em `src/api/config.ts` para o IP da sua máquina na rede local.
 
 ---
 
@@ -134,10 +106,13 @@ npm install
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| `GET` | `/medications` | Lista todas as medicações |
+| `GET` | `/health` | Status da API |
+| `GET` | `/medications` | Lista medicações |
 | `GET` | `/medications/:id` | Busca medicação por ID |
-| `POST` | `/medications` | Cria nova medicação |
+| `POST` | `/medications` | Cria medicação |
 | `PATCH` | `/medications/:id` | Atualiza medicação |
 | `DELETE` | `/medications/:id` | Remove medicação |
-| `GET` | `/medication-logs` | Lista logs (aceita `?days=7&medicationId=UUID`) |
-| `POST` | `/medication-logs` | Registra uso ou perda de medicação |
+| `GET` | `/medication-logs` | Lista logs (`?days=7&medicationId=UUID`) |
+| `POST` | `/medication-logs` | Registra uso ou perda |
+| `GET` | `/weight-records` | Lista registros de peso |
+| `POST` | `/weight-records` | Cria registro de peso |

@@ -1,156 +1,106 @@
-# AutoCuidado – Monitor de Saúde Pessoal 🩺
+# AutoCuidado – Seu Assistente Pessoal de Saúde 🩺
 
-Aplicativo mobile de **monitoramento pessoal de saúde**, desenvolvido como MVP com foco em autocuidado, organização e criação de hábitos saudáveis.
+Um aplicativo mobile **simples e fácil de usar** que ajuda você a cuidar melhor da sua saúde no dia a dia.
 
-O AutoCuidado permite acompanhar a evolução de peso e gerenciar o uso de medicações de forma simples, centralizada e acessível — tudo 100% offline, sem depender de internet.
-
----
-
-## 📱 Funcionalidades do MVP
-
-### ⚖️ Monitoramento de Peso
-- Registro manual de peso com data personalizada
-- Anotações opcionais por registro
-- Visualização da evolução em gráfico
-- Indicação de tendência (ganho, perda ou estável)
-- Lembrete mensal de pesagem
-
-### 💊 Controle de Medicações
-- Cadastro de medicamentos (nome, dosagem, frequência, horários)
-- Ações rápidas: **"Tomei"** ou **"Perdi"**
-- Histórico automático dos últimos 30 dias
-- Alarmes e lembretes automáticos
-
-### 🔔 Notificações
-- Notificações locais no dispositivo
-- Agendamento automático com base na frequência
-- Alertas visuais e sonoros
-
-### 🎨 Interface
-- Navegação por abas (Peso, Medicações, Histórico)
-- Layout limpo e funcional
-- Componentes reutilizáveis (Button, Card, Input)
-- Splash screen com dicas de saúde
+O AutoCuidado funciona como um caderno digital inteligente que guarda tudo no seu próprio celular. Você acompanha seu peso, controla seus medicamentos e recebe lembretes automáticos — tudo isso **sem precisar de internet**. Seus dados ficam seguros, privados e apenas no seu dispositivo.
 
 ---
 
-## 🧱 Arquitetura
+## 📱 O que o App Faz?
 
-O projeto segue uma arquitetura em camadas com **API interna**:
+### ⚖️ Acompanhamento de Peso
+Registre quanto você pesa e veja sua evolução com gráficos visuais:
+- Anote seu peso quando quiser, com qualquer data
+- Escreva observações (como "comida mais saudável", "comecei exercícios")
+- Veja em um gráfico como seu peso está evoluindo
+- Receba um lembrete mensal para pesagem
 
-```
-UI (Telas) → Services → Repositories → Dados (mock/local)
-```
+### 💊 Controle de Medicamentos
+Nunca mais esqueça de tomar seu remédio:
+- Cadastre todos os seus medicamentos com dosagem e horários
+- O app te avisa quando é hora de tomar
+- Marque quando você tomou com um simples toque
+- Veja o histórico dos últimos 30 dias
+- Receba alarmes no seu celular nos horários certos
 
-A interface **nunca acessa dados diretamente**. Toda regra de negócio fica nos services, e os dados são fornecidos por repositories.
-
-### Estrutura do Projeto
-
-```
-AppAutoCuidado/
-  app/                    # Rotas/telas (Expo Router)
-    _layout.tsx           # Layout raiz + splash screen
-    (tabs)/
-      _layout.tsx         # Navegação por abas
-      index.tsx           # Tela de Peso
-      medications.tsx     # Tela de Medicações
-      history.tsx         # Tela de Histórico
-  components/             # Componentes reutilizáveis
-    button.tsx
-    card.tsx
-    input.tsx
-  constants/
-    theme.ts              # Cores, fontes, espaçamentos
-  src/
-    models/               # Interfaces TypeScript (Peso, Medicação, Notificação)
-    repositories/         # Contratos de acesso a dados
-    services/             # Contratos de regras de negócio
-    mocks/                # Dados fake para desenvolvimento
-```
+### 🔔 Lembretes Inteligentes
+O aplicativo trabalha para você:
+- Notificações automáticas nos horários dos medicamentos
+- Alertas visuais e sonoros para não passar batido
+- Funciona mesmo sem internet
 
 ---
 
-## 🛠️ Tecnologias
+## 🎯 Como Usar?
 
-- **React Native** + **TypeScript**
-- **Expo** (SDK 54) + **Expo Router** (file-based routing)
-- **MaterialCommunityIcons** para ícones
-- Armazenamento local (sem backend externo)
+O aplicativo é organizado em **3 abas** (guias) simples:
+
+1. **Peso** 📊 — Registre e veja seu progresso
+2. **Medicações** 💊 — Gerencie seus medicamentos e receba lembretes
+3. **Histórico** 📋 — Veja tudo que você registrou antes
 
 ---
 
-## 🚀 Como Configurar e Rodar
+## 🔒 Sua Privacidade é Protegida
 
-### Pré-requisitos
+✅ Seus dados ficam **apenas no seu celular**  
+✅ **Nada é enviado** para a internet ou para servidores  
+✅ **Você tem controle total** de tudo  
+✅ **Sem propaganda ou coleta de informações**  
 
-- [Node.js](https://nodejs.org/) (v18 ou superior)
-- [Expo Go](https://expo.dev/go) instalado no celular (Android ou iOS)
-- Ou um emulador Android / simulador iOS configurado
+---
 
-### Instalação
+## 📲 Como Começar?
 
-1. Clone o repositório e entre na pasta do projeto:
+### O que você precisa:
+- Um smartphone (Android ou iPhone)
+- A app Expo Go instalada (você faz o download grátis)
+- Ou um emulador de celular no seu computador
 
-   ```bash
+### Para instalar e rodar:
+
+1. Abra o terminal/comando no computador
+2. Entre na pasta do projeto:
+   ```
    cd AppAutoCuidado
    ```
-
-2. Instale as dependências:
-
-   ```bash
+3. Instale as dependências:
+   ```
    npm install
    ```
+4. Inicie o app:
+   ```
+   npx expo start
+   ```
+5. Escaneie o código QR que aparecer com o app Expo Go no seu celular
 
-### Executando o App
+**Pronto! O app está rodando no seu celular** 📱
 
-```bash
-npx expo start
-```
+---
 
-Depois de iniciar, você pode abrir o app de três formas:
+## 👥 Quem Criou Isso?
 
-| Método | Como fazer |
+| Pessoa | O que Fez |
 |---|---|
-| **Expo Go (celular)** | Escaneie o QR Code que aparece no terminal com o app Expo Go |
-| **Emulador Android** | Pressione `a` no terminal |
-| **Simulador iOS** | Pressione `i` no terminal (somente macOS) |
-
-### Outros comandos
-
-```bash
-npm run android    # Inicia direto no Android
-npm run ios        # Inicia direto no iOS
-npm run web        # Inicia versão web
-npm run lint       # Verifica erros de código
-```
+| **Felipe** | Design bonito e menu de navegação |
+| **Anderson** | Tudo sobre monitoramento de peso |
+| **Gustavo** | Sistema de medicamentos e lembretes |
 
 ---
 
-## 👥 Equipe
+## 💡 Por Que Usar AutoCuidado?
 
-| Integrante | Responsabilidade |
-|---|---|
-| **Felipe** | Estrutura base, interface, navegação, componentes, tema, splash screen |
-| **Anderson** | Lógica de monitoramento de peso (models, cálculos, tendências, mocks) |
-| **Gustavo** | Medicações e notificações (alarmes, agendamento, histórico, callbacks) |
-
----
-
-## 🔒 Privacidade
-
-- Dados armazenados **somente no dispositivo**
-- Sem compartilhamento de informações
-- Sem dependência de internet
-- Controle total do usuário sobre seus registros
+✨ **Simples** — Interface clara e fácil de entender  
+✨ **Rápido** — Registra seus dados em poucos cliques  
+✨ **Privado** — Você controla totalmente seus dados  
+✨ **Offline** — Funciona sem internet  
+✨ **Confiável** — Lembretes que não falham  
 
 ---
 
-## 📚 Documentação
+## 📚 Quer Saber Mais?
 
-Documentação detalhada disponível na pasta `docs/`:
-
-- [Descrição do Projeto](../docs/README-DESCRICAO.md)
-- [Definição do MVP](../docs/README-MVP.md)
-- [Pitch do Projeto](../docs/README-PITCH.md)
-- [Divisão de Responsabilidades](../docs/README-RESPONSIBILITIES.md)
-- [Documentação Técnica](../docs/README-TECHNICAL.md)
+Documentação técnica (para desenvolvedores) disponível em `docs/`:
+- Descrição completa do projeto
+- Detalhes técnicos
+- Divisão de responsabilidades da equipe

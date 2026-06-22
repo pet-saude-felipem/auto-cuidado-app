@@ -14,6 +14,7 @@ Registre quanto você pesa e veja sua evolução com gráficos visuais:
 - Escreva observações (como "comida mais saudável", "comecei exercícios")
 - Veja em um gráfico como seu peso está evoluindo
 - Receba um lembrete mensal para pesagem
+<img width="450" height="983" alt="image" src="https://github.com/user-attachments/assets/edd70ee9-b9af-4979-bbb3-d14951ef5ecc" />
 
 ### 💊 Controle de Medicamentos
 Nunca mais esqueça de tomar seu remédio:
@@ -22,12 +23,16 @@ Nunca mais esqueça de tomar seu remédio:
 - Marque quando você tomou com um simples toque
 - Veja o histórico dos últimos 30 dias
 - Receba alarmes no seu celular nos horários certos
+<img width="453" height="986" alt="image" src="https://github.com/user-attachments/assets/5ed94a1b-79fe-4f4c-801a-f7d1a66057f9" />
+
 
 ### 🔔 Lembretes Inteligentes
 O aplicativo trabalha para você:
 - Notificações automáticas nos horários dos medicamentos
 - Alertas visuais e sonoros para não passar batido
 - Funciona mesmo sem internet
+<img width="467" height="988" alt="image" src="https://github.com/user-attachments/assets/7dfdbfea-6a14-4030-8f5d-3e36baa82815" />
+
 
 ---
 

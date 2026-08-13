@@ -69,7 +69,10 @@ const MiniChart = ({ data }: { data: WeightChartData[] }) => {
 // --- TELA PRINCIPAL ---
 
 export default function WeightScreen() {
-  const { theme } = useTheme();
+  const { theme, themeType } = useTheme();
+
+  // Verifica se o tema atual é o secundário (E-SUS/SMS)
+  const isEsus = themeType === 'secondary' || theme.primary === '#25696A';
 
   const [records, setRecords] = useState<WeightRecord[]>([]);
   const [chartData, setChartData] = useState<WeightChartData[]>([]);
@@ -187,14 +190,19 @@ export default function WeightScreen() {
 
             {reminderMsg && (
               <Pressable
-                style={[styles.reminderBanner, { backgroundColor: theme.tagBackground }]}
+                style={[
+                  styles.reminderBanner,
+                  { backgroundColor: isEsus ? '#FDEEE7' : theme.tagBackground },
+                ]}
                 onPress={() => {
                   setReminderMsg(null);
                   setModalVisible(true);
                 }}
               >
                 <Text style={[styles.reminderText, { color: theme.text }]}>⚠️ {reminderMsg}</Text>
-                <Text style={[styles.reminderAction, { color: theme.primary }]}>Registrar agora</Text>
+                <Text style={[styles.reminderAction, { color: isEsus ? theme.secondary : theme.primary }]}>
+                  Registrar agora
+                </Text>
               </Pressable>
             )}
 
@@ -264,9 +272,12 @@ export default function WeightScreen() {
         }
       />
 
-      {/* Botão Flutuante (FAB) */}
+      {/* Botão Flutuante (FAB) - Laranja no E-SUS / Azul  */}
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.primary }]}
+        style={[
+          styles.fab,
+          { backgroundColor: isEsus ? theme.secondary : theme.primary },
+        ]}
         onPress={() => setModalVisible(true)}
         activeOpacity={0.7}
       >
@@ -323,7 +334,7 @@ export default function WeightScreen() {
                 <Pressable
                   style={[
                     styles.btn,
-                    { backgroundColor: theme.primary },
+                    { backgroundColor: isEsus ? theme.secondary : theme.primary },
                     saving && styles.btnDisabled,
                   ]}
                   onPress={handleSave}

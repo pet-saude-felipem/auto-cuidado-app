@@ -39,7 +39,7 @@ export const Themes = {
     tagBackground: '#E8F1F5',
   },
 
-  // Tema Secundário (SMS Fortaleza Exato: Verde #25696A / Laranja #E9601C)
+  // Tema Secundário (SMS Fortaleza: Verde #25696A / Laranja #E9601C)
   secondary: {
     name: 'secondary',
     primary: '#25696A',       // Verde Oficial SMS
@@ -70,7 +70,7 @@ export const Themes = {
 
     tabBar: '#FFFFFF',
     tabBarInactive: '#718096',
-    tabBarActive: '#25696A',
+    tabBarActive: '#E9601C',   // Ícones do rodapé
     tagBackground: '#FDEEE7', // Fundo Laranja Suave do Banner
   },
 };
@@ -129,7 +129,7 @@ export const Shadows = {
     elevation: 3,
   },
   button: {
-    shadowColor: '#25696A',
+    shadowColor: '#E9601C',   // <--- MUDADO PARA LARANJA
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

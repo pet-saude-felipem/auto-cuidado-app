@@ -30,9 +30,9 @@ CREATE USER autocuidado_user WITH PASSWORD 'autocuidado_pass';
 CREATE DATABASE autocuidado OWNER autocuidado_user;
 ```
 
-> Ajuste usuário/senha no `.env` se usar credenciais diferentes.
+> O nome do banco, usuário e senha precisam corresponder aos valores em `BD_SQL/server/.env`.
 
-### Aplicar schema e dados iniciais
+### Aplicar o esquema do banco
 
 ```bash
 cd BD_SQL/server
@@ -40,15 +40,15 @@ npm install
 npm run db:setup
 ```
 
-O comando `db:setup` aplica as migrations e popula o banco com os dados iniciais (seed).
+O comando `db:setup` aplica as migrations e deixa as tabelas prontas, sem criar registros de exemplo.
 
 ### Comandos úteis do Prisma
 
 | Comando | O que faz |
 |---------|-----------|
-| `npm run db:setup` | Aplica migrations + seed (setup completo) |
-| `npm run db:seed` | Repopula dados iniciais |
-| `npm run db:reset` | Apaga tudo, reaplica migrations e seed |
+| `npm run db:setup` | Aplica migrations, sem criar registros |
+| `npm run db:clear` | Remove pesagens, medicações e registros de uso; mantém as tabelas |
+| `npm run db:reset` | Recria o esquema sem dados de exemplo |
 | `npm run prisma:migrate` | Cria/aplica migration em desenvolvimento |
 | `npm run prisma:studio` | Interface visual do banco |
 
@@ -97,6 +97,8 @@ npx expo start
 ### Dispositivo físico
 
 Escaneie o QR Code com o **Expo Go**.
+
+O celular e o computador devem estar na mesma rede. O app usa o endereço do servidor Expo para localizar a API na porta `3001`. Se estiver usando túnel ou uma API em outro computador, defina `EXPO_PUBLIC_API_BASE_URL=http://IP_DA_API:3001` no ambiente do Expo antes de iniciá-lo.
 
 > Em dispositivos físicos, ajuste a URL da API em `src/api/config.ts` para o IP da sua máquina na rede local.
 

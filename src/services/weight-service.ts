@@ -5,6 +5,7 @@ import {
   WeightTrend,
 } from "../models/weight";
 import { weightRepository } from "../repositories/weight-repository";
+import { daysSinceDate, parseLocalDate } from '@/src/utils/date';
 
 /**
  * Implementação do serviço de peso.
@@ -43,7 +44,7 @@ class WeightService {
     const records = await weightRepository.getAll();
     return records
       .map((r) => ({
-        label: new Date(r.date).toLocaleDateString("pt-BR", {
+        label: parseLocalDate(r.date).toLocaleDateString("pt-BR", {
           day: "2-digit",
           month: "2-digit",
         }),
@@ -77,12 +78,9 @@ class WeightService {
    */
   async checkMonthlyReminder(): Promise<{ shouldRemind: boolean; lastDays: number }> {
     const records = await weightRepository.getAll();
-    if (records.length === 0) return { shouldRemind: true, lastDays: 0 };
+    if (records.length === 0) return { shouldRemind: false, lastDays: 0 };
 
-    const lastDate = new Date(records[0].date);
-    const today = new Date();
-    const diffTime = Math.abs(today.getTime() - lastDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = daysSinceDate(records[0].date);
 
     return {
       shouldRemind: diffDays >= 30, // Lembrete após 30 dias

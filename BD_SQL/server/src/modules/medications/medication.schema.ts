@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const MEDICATION_FREQUENCIES = ['1x', '2x', '3x', '4x'] as const;
+export const MEDICATION_FREQUENCIES = ['1x', '2x', '3x', '4x', '5+'] as const;
 
 export const createMedicationSchema = z.object({
   name: z.string().trim().min(1, 'Nome é obrigatório.').max(100),

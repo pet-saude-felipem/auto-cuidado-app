@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, ViewStyle, KeyboardTypeOptions } from 'react-native';
+import { View, TextInput, StyleSheet, ViewStyle, KeyboardTypeOptions } from 'react-native';
+import { AppText as Text, SYSTEM_FONT } from './app-text';
+import { useTheme } from '@/src/context/ThemeContext';
 import { Colors, Fonts, BorderRadius, Spacing } from '@/constants/theme';
 
 interface InputProps {
@@ -25,6 +27,7 @@ export function Input({
   style,
   error,
 }: InputProps) {
+  const { fontPreference, textScale } = useTheme();
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -33,6 +36,7 @@ export function Input({
           styles.input,
           multiline && styles.multiline,
           error && styles.inputError,
+          { fontFamily: fontPreference === 'system' ? SYSTEM_FONT : Fonts.family.regular, fontSize: Fonts.size.md * textScale },
         ]}
         placeholder={placeholder}
         placeholderTextColor={Colors.textLight}

@@ -39,7 +39,7 @@ O AutoCuidado permite acompanhar a evolução de peso e gerenciar o uso de medic
 O projeto segue uma arquitetura em camadas com **API interna**:
 
 ```
-UI (Telas) → Services → Repositories → Dados (mock/local)
+UI (Telas) → Services → Repositories → API REST → PostgreSQL
 ```
 
 A interface **nunca acessa dados diretamente**. Toda regra de negócio fica nos services, e os dados são fornecidos por repositories.
@@ -65,7 +65,7 @@ AppAutoCuidado/
     models/               # Interfaces TypeScript (Peso, Medicação, Notificação)
     repositories/         # Contratos de acesso a dados
     services/             # Contratos de regras de negócio
-    mocks/                # Dados fake para desenvolvimento
+    content/              # Textos de apoio da tela de abertura
 ```
 
 ---
@@ -75,7 +75,7 @@ AppAutoCuidado/
 - **React Native** + **TypeScript**
 - **Expo** (SDK 54) + **Expo Router** (file-based routing)
 - **MaterialCommunityIcons** para ícones
-- Armazenamento local (sem backend externo)
+- API REST em Node.js/Express com PostgreSQL e Prisma para os registros de saúde
 
 ---
 

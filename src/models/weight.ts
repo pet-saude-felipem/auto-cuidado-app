@@ -33,17 +33,17 @@ export interface WeightSummary {
 
 //implementação  "Anderson"
 export interface IWeightRepository {
-  getAll(): WeightRecord[];
-  getById(id: string): WeightRecord | undefined;
-  create(record: Omit<WeightRecord, 'id'>): WeightRecord;
-  update(id: string, data: Partial<WeightRecord>): WeightRecord | undefined;
-  remove(id: string): boolean;
+  getAll(): Promise<WeightRecord[]>;
+  getById(id: string): Promise<WeightRecord | undefined>;
+  create(record: Omit<WeightRecord, 'id'>): Promise<WeightRecord>;
+  update(id: string, data: Partial<WeightRecord>): Promise<WeightRecord | undefined>;
+  remove(id: string): Promise<boolean>;
 }
 
 export interface IWeightService {
-  getAllRecords(): WeightRecord[];
-  addRecord(value: number, date: string, notes?: string): WeightRecord;
-  removeRecord(id: string): boolean;
-  getChartData(): WeightChartData[];
-  getSummary(): WeightSummary | null;
+  getAllRecords(): Promise<WeightRecord[]>;
+  addRecord(value: number, date: string, notes?: string): Promise<WeightRecord>;
+  removeRecord(id: string): Promise<boolean>;
+  getChartData(): Promise<WeightChartData[]>;
+  getSummary(): Promise<WeightSummary | null>;
 }

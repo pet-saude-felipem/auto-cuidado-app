@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { AppText as Text, SYSTEM_FONT } from '@/components/app-text';
 import {
   View,
-  Text,
   FlatList,
   StyleSheet,
   TouchableOpacity,
@@ -13,25 +15,27 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
-// SafeAreaView removido — o header da Tab já cobre a safe area
 import { Card } from '@/components';
-import { Colors, Fonts, Spacing, BorderRadius } from '@/constants/theme';
+import { Fonts, Spacing, BorderRadius } from '@/constants/theme';
+import { useTheme } from '@/src/context/ThemeContext';
 import { medicationService, notificationService } from '@/src/services';
 import { Medication, MedicationLog, MedicationFrequency } from '@/src/models';
+import { toLocalDateISO } from '@/src/utils/date';
 
 function StatusBadge({ status }: { status: 'taken' | 'missed' }) {
+  const { theme } = useTheme();
   const isTaken = status === 'taken';
   return (
     <View
       style={[
         styles.statusBadge,
-        { backgroundColor: (isTaken ? Colors.success : Colors.error) + '20' },
+        { backgroundColor: (isTaken ? theme.success : theme.error) + '20' },
       ]}
     >
       <Text
         style={[
           styles.statusText,
-          { color: isTaken ? Colors.success : Colors.error },
+          { color: isTaken ? theme.success : theme.error },
         ]}
       >
         {isTaken ? '✓ Tomei' : '✗ Perdi'}
@@ -51,46 +55,52 @@ function MedicationItem({
   onTaken: (id: string) => void;
   onMissed: (id: string) => void;
 }) {
+  const { theme } = useTheme();
   const todayLogs = logs.filter(
-    (l) => l.medicationId === item.id && l.date === new Date().toISOString().split('T')[0]
+    (l) => l.medicationId === item.id && l.date === toLocalDateISO()
   );
 
   return (
     <Card style={styles.medCard}>
       <View style={styles.medHeader}>
+        <View style={[styles.medIcon, { backgroundColor: theme.tagBackground }]}>
+          <Ionicons name="medkit-outline" size={22} color={theme.primaryDark} />
+        </View>
         <View style={styles.medInfo}>
-          <Text style={styles.medName}>{item.name}</Text>
-          <Text style={styles.medDosage}>
-            {item.dosage} — {item.frequency}/dia
+          <Text style={[styles.medName, { color: theme.text }]}>{item.name}</Text>
+          <Text style={[styles.medDosage, { color: theme.textSecondary }]}>
+            {item.dosage} — {item.frequency === '5+' ? `${item.times.length}x` : item.frequency}/dia
           </Text>
-          <Text style={styles.medTimes}>
+          <Text style={[styles.medTimes, { color: theme.primaryDark }]}>
             Horários: {item.times.join(', ')}
           </Text>
           {item.notes && (
-            <Text style={styles.medNotes}>{item.notes}</Text>
+            <Text style={[styles.medNotes, { color: theme.textSecondary }]}>{item.notes}</Text>
           )}
         </View>
       </View>
 
-      {/* Ações rápidas */}
       <View style={styles.actions}>
         <TouchableOpacity
-          style={[styles.actionBtn, styles.takenBtn]}
+          style={[styles.actionBtn, { backgroundColor: theme.success + '15', borderColor: theme.success + '40' }]}
           onPress={() => onTaken(item.id)}
           activeOpacity={0.7}
+          accessibilityRole="button"
         >
-          <Text style={styles.takenText}>✓ Tomei</Text>
+          <Ionicons name="checkmark-circle-outline" size={18} color={theme.success} />
+          <Text style={[styles.actionText, { color: theme.success }]}>Tomei</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.actionBtn, styles.missedBtn]}
+          style={[styles.actionBtn, { backgroundColor: theme.error + '15', borderColor: theme.error + '40' }]}
           onPress={() => onMissed(item.id)}
           activeOpacity={0.7}
+          accessibilityRole="button"
         >
-          <Text style={styles.missedText}>✗ Perdi</Text>
+          <Ionicons name="close-circle-outline" size={18} color={theme.error} />
+          <Text style={[styles.actionText, { color: theme.error }]}>Perdi</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Registros do dia */}
       {todayLogs.length > 0 && (
         <View style={styles.todayLogs}>
           {todayLogs.map((log) => (
@@ -102,9 +112,21 @@ function MedicationItem({
   );
 }
 
-const FREQUENCY_OPTIONS: MedicationFrequency[] = ['1x', '2x', '3x', '4x'];
+const FREQUENCY_OPTIONS: { value: MedicationFrequency; label: string }[] = [
+  { value: '1x', label: '1' },
+  { value: '2x', label: '2' },
+  { value: '3x', label: '3' },
+  { value: '4x', label: '4' },
+  { value: '5+', label: 'Mais de 4' },
+];
+
+function frequencyForTimes(count: number): MedicationFrequency {
+  return count > 4 ? '5+' : `${count}x` as MedicationFrequency;
+}
 
 export default function MedicationsScreen() {
+  const { theme, currentTheme, medicationReminders, fontPreference, textScale } = useTheme();
+  const actionColor = currentTheme === 'secondary' ? theme.secondary : theme.primary;
   const [medications, setMedications] = useState<Medication[]>([]);
   const [logs, setLogs] = useState<MedicationLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,15 +137,14 @@ export default function MedicationsScreen() {
   const [saving, setSaving] = useState(false);
   const [formName, setFormName] = useState('');
   const [formDosage, setFormDosage] = useState('');
-  const [formFrequency, setFormFrequency] = useState<MedicationFrequency>('1x');
   const [formTimes, setFormTimes] = useState<string[]>(['']);
+  const formFrequency = frequencyForTimes(formTimes.length);
   const [formNotes, setFormNotes] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const resetForm = () => {
     setFormName('');
     setFormDosage('');
-    setFormFrequency('1x');
     setFormTimes(['']);
     setFormNotes('');
     setFormErrors({});
@@ -142,12 +163,11 @@ export default function MedicationsScreen() {
     const errors: Record<string, string> = {};
     if (!formName.trim()) errors.name = 'Nome é obrigatório';
     if (!formDosage.trim()) errors.dosage = 'Dosagem é obrigatória';
-    const validTimes = formTimes.filter(t => t.trim());
-    if (validTimes.length === 0) {
-      errors.times = 'Informe ao menos um horário';
+    if (formTimes.some(t => !t.trim())) {
+      errors.times = 'Preencha todos os horários';
     } else {
       const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-      const invalid = validTimes.some(t => !timeRegex.test(t.trim()));
+      const invalid = formTimes.some(t => !timeRegex.test(t.trim()));
       if (invalid) errors.times = 'Use o formato HH:MM (ex: 08:00)';
     }
     setFormErrors(errors);
@@ -162,7 +182,7 @@ export default function MedicationsScreen() {
         name: formName.trim(),
         dosage: formDosage.trim(),
         frequency: formFrequency,
-        times: formTimes.filter(t => t.trim()).map(t => t.trim()),
+        times: formTimes.map(t => t.trim()),
         notes: formNotes.trim() || undefined,
       });
       closeModal();
@@ -186,12 +206,21 @@ export default function MedicationsScreen() {
     });
   };
 
+  const selectFrequency = (frequency: MedicationFrequency) => {
+    if (frequency === formFrequency) return;
+    const count = frequency === '5+' ? 5 : Number.parseInt(frequency, 10);
+    setFormTimes(prev => Array.from({ length: count }, (_, index) => prev[index] ?? ''));
+    setFormErrors(prev => ({ ...prev, times: '' }));
+  };
+
   const addTimeSlot = () => {
-    if (formTimes.length < 4) setFormTimes(prev => [...prev, '']);
+    setFormTimes(prev => [...prev, '']);
+    setFormErrors(prev => ({ ...prev, times: '' }));
   };
 
   const removeTimeSlot = (index: number) => {
     if (formTimes.length > 1) setFormTimes(prev => prev.filter((_, i) => i !== index));
+    setFormErrors(prev => ({ ...prev, times: '' }));
   };
 
   const loadData = useCallback(async () => {
@@ -204,6 +233,8 @@ export default function MedicationsScreen() {
       ]);
       setMedications(meds);
       setLogs(recentLogs);
+      notificationService.reconcileMedicationReminders(meds.map((med) => med.id))
+        .catch((err: unknown) => console.warn('Erro ao atualizar lembretes:', err));
     } catch (err) {
       setError('Não foi possível carregar as medicações.\nVerifique se o servidor está rodando.');
       console.error(err);
@@ -212,13 +243,14 @@ export default function MedicationsScreen() {
     }
   }, []);
 
-  useEffect(() => { 
-    loadData();
+  useFocusEffect(useCallback(() => { void loadData(); }, [loadData]));
+
+  useEffect(() => {
     // Solicita permissões para notificações ao abrir o app
-    notificationService.ensurePermissions().catch((err: unknown) => 
+    if (medicationReminders) notificationService.ensurePermissions().catch((err: unknown) =>
       console.warn('Erro ao solicitar permissões:', err)
     );
-  }, [loadData]);
+  }, [loadData, medicationReminders]);
 
   const handleTaken = async (medicationId: string) => {
     const now = new Date().toTimeString().slice(0, 5);
@@ -229,7 +261,7 @@ export default function MedicationsScreen() {
 
       // Encontra a medicação para pegar o nome e horários
       const medication = medications.find((m) => m.id === medicationId);
-      if (medication) {
+      if (medication && medicationReminders) {
         // Calcula a próxima dose
         const nextDoseTime = calculateNextDoseTime(medication.times, now);
         if (nextDoseTime) {
@@ -250,7 +282,6 @@ export default function MedicationsScreen() {
 
   // Função auxiliar para calcular próxima dose
   const calculateNextDoseTime = (times: string[], currentTime: string): Date | null => {
-    const now = new Date();
     const currentMinutes = parseInt(currentTime.split(':')[0]) * 60 + parseInt(currentTime.split(':')[1]);
     
     // Ordena os horários e encontra o próximo
@@ -295,26 +326,27 @@ export default function MedicationsScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.screen, styles.center]}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Carregando medicações…</Text>
+      <View style={[styles.screen, styles.center, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primaryDark} />
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Carregando medicações…</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.screen, styles.center]}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={loadData}>
-          <Text style={styles.retryText}>Tentar novamente</Text>
+      <View style={[styles.screen, styles.center, { backgroundColor: theme.background }]}>
+        <Ionicons name="alert-circle-outline" size={38} color={theme.error} />
+        <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
+        <TouchableOpacity style={[styles.retryBtn, { backgroundColor: theme.primary }]} onPress={loadData}>
+          <Text style={[styles.retryText, { color: theme.textOnPrimary }]}>Tentar novamente</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <FlatList
         data={medications}
         keyExtractor={(item) => item.id}
@@ -329,19 +361,59 @@ export default function MedicationsScreen() {
         )}
         ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}
         ListHeaderComponent={
-          <Text style={styles.sectionTitle}>Suas Medicações</Text>
+          <>
+            <View style={styles.pageIntro}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Cuide da sua rotina</Text>
+              <Text style={[styles.introSubtitle, { color: theme.textSecondary }]}>
+                Organize os horários e acompanhe o uso dos seus medicamentos.
+              </Text>
+            </View>
+
+            <View style={[styles.summaryCard, { backgroundColor: theme.primary }]}>
+              <View style={styles.summaryTop}>
+                <View style={styles.summaryCopy}>
+                  <Text style={[styles.summaryEyebrow, { color: theme.textOnPrimary }]}>SUAS MEDICAÇÕES</Text>
+                  <Text style={[styles.summaryNumber, { color: theme.textOnPrimary }]}>{medications.length}</Text>
+                  <Text style={[styles.summaryLabel, { color: theme.textOnPrimary }]}>
+                    {medications.length === 1 ? 'medicação cadastrada' : 'medicações cadastradas'}
+                  </Text>
+                </View>
+                <View style={styles.summaryIcon}>
+                  <Ionicons name="medkit-outline" size={24} color={theme.textOnPrimary} />
+                </View>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.addButton, { backgroundColor: actionColor }]}
+              onPress={openModal}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Adicionar medicação"
+            >
+              <Ionicons name="add" size={21} color={theme.textOnPrimary} />
+              <Text style={[styles.addButtonText, { color: theme.textOnPrimary }]}>Adicionar medicação</Text>
+            </TouchableOpacity>
+
+            <View style={styles.listHeading}>
+              <Text style={[styles.listTitle, { color: theme.text }]}>Minha lista</Text>
+              <Text style={[styles.listSubtitle, { color: theme.textSecondary }]}>Medicamentos e horários cadastrados</Text>
+            </View>
+          </>
         }
         ListEmptyComponent={
-          <Text style={styles.emptyText}>Nenhuma medicação cadastrada.{'\n'}Toque no botão + para adicionar.</Text>
+          <Card style={styles.emptyCard}>
+            <View style={[styles.emptyIcon, { backgroundColor: theme.tagBackground }]}>
+              <Ionicons name="medkit-outline" size={26} color={theme.primaryDark} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>Nenhuma medicação ainda</Text>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+              Use o botão acima para adicionar sua primeira medicação.
+            </Text>
+          </Card>
         }
       />
 
-      {/* FAB para abrir modal de cadastro */}
-      <TouchableOpacity style={styles.fab} onPress={openModal} activeOpacity={0.7}>
-        <Text style={styles.fabIcon}>+</Text>
-      </TouchableOpacity>
-
-      {/* Modal de cadastro de medicação */}
       {modalVisible && (
         <Modal visible={modalVisible} transparent animationType="slide">
           <KeyboardAvoidingView
@@ -349,90 +421,108 @@ export default function MedicationsScreen() {
             style={styles.modalOverlay}
           >
             <ScrollView contentContainerStyle={styles.modalScroll} keyboardShouldPersistTaps="handled">
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Nova Medicação</Text>
+              <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: theme.text }]}>Nova medicação</Text>
+                  <Pressable
+                    style={styles.closeButton}
+                    onPress={closeModal}
+                    disabled={saving}
+                    accessibilityRole="button"
+                    accessibilityLabel="Fechar"
+                  >
+                    <Ionicons name="close" size={22} color={theme.textSecondary} />
+                  </Pressable>
+                </View>
 
-                {/* Nome */}
-                <Text style={styles.inputLabel}>Nome *</Text>
+                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Nome *</Text>
                 <TextInput
-                  style={[styles.input, formErrors.name && styles.inputError]}
+                  style={[styles.input, { backgroundColor: theme.background, borderColor: formErrors.name ? theme.error : theme.border, color: theme.text, fontFamily: fontPreference === 'system' ? SYSTEM_FONT : Fonts.family.regular, fontSize: Fonts.size.md * textScale }]}
                   placeholder="Ex: Losartana"
+                  placeholderTextColor={theme.textLight}
                   value={formName}
                   onChangeText={(t) => { setFormName(t); setFormErrors(e => ({ ...e, name: '' })); }}
                 />
-                {formErrors.name ? <Text style={styles.errorMsg}>{formErrors.name}</Text> : null}
+                {formErrors.name ? <Text style={[styles.errorMsg, { color: theme.error }]}>{formErrors.name}</Text> : null}
 
-                {/* Dosagem */}
-                <Text style={styles.inputLabel}>Dosagem *</Text>
+                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Dosagem *</Text>
                 <TextInput
-                  style={[styles.input, formErrors.dosage && styles.inputError]}
+                  style={[styles.input, { backgroundColor: theme.background, borderColor: formErrors.dosage ? theme.error : theme.border, color: theme.text, fontFamily: fontPreference === 'system' ? SYSTEM_FONT : Fonts.family.regular, fontSize: Fonts.size.md * textScale }]}
                   placeholder="Ex: 50mg"
+                  placeholderTextColor={theme.textLight}
                   value={formDosage}
                   onChangeText={(t) => { setFormDosage(t); setFormErrors(e => ({ ...e, dosage: '' })); }}
                 />
-                {formErrors.dosage ? <Text style={styles.errorMsg}>{formErrors.dosage}</Text> : null}
+                {formErrors.dosage ? <Text style={[styles.errorMsg, { color: theme.error }]}>{formErrors.dosage}</Text> : null}
 
-                {/* Frequência */}
-                <Text style={styles.inputLabel}>Frequência *</Text>
-                <View style={styles.freqRow}>
-                  {FREQUENCY_OPTIONS.map((freq) => (
+                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Frequência diária *</Text>
+                <View style={styles.freqRow} accessibilityRole="radiogroup">
+                  {FREQUENCY_OPTIONS.map((option) => (
                     <Pressable
-                      key={freq}
-                      style={[styles.freqBtn, formFrequency === freq && styles.freqBtnActive]}
-                      onPress={() => setFormFrequency(freq)}
+                      key={option.value}
+                      style={[
+                        styles.freqBtn,
+                        option.value === '5+' && styles.freqBtnMore,
+                        { backgroundColor: formFrequency === option.value ? theme.primary : theme.background, borderColor: formFrequency === option.value ? theme.primary : theme.border },
+                      ]}
+                      onPress={() => selectFrequency(option.value)}
+                      accessibilityRole="radio"
+                      accessibilityLabel={option.value === '5+' ? 'Mais de 4 vezes ao dia' : `${option.label} vez${option.label === '1' ? '' : 'es'} ao dia`}
+                      accessibilityState={{ selected: formFrequency === option.value }}
                     >
-                      <Text style={[styles.freqText, formFrequency === freq && styles.freqTextActive]}>
-                        {freq}/dia
+                      <Text style={[styles.freqText, { color: formFrequency === option.value ? theme.textOnPrimary : theme.textSecondary }]}>
+                        {option.label}
                       </Text>
                     </Pressable>
                   ))}
                 </View>
 
-                {/* Horários */}
-                <Text style={styles.inputLabel}>Horários *</Text>
+                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Horários ({formTimes.length}) *</Text>
                 {formTimes.map((time, idx) => (
                   <View key={idx} style={styles.timeRow}>
+                    <View style={[styles.timeIndex, { backgroundColor: theme.primary + '12' }]}>
+                      <Text style={[styles.timeIndexText, { color: theme.primaryDark }]}>{idx + 1}</Text>
+                    </View>
                     <TextInput
-                      style={[styles.input, styles.timeInput, formErrors.times && styles.inputError]}
+                      style={[styles.input, styles.timeInput, { backgroundColor: theme.background, borderColor: formErrors.times ? theme.error : theme.border, color: theme.text, fontFamily: fontPreference === 'system' ? SYSTEM_FONT : Fonts.family.regular, fontSize: Fonts.size.md * textScale }]}
                       placeholder="HH:MM"
+                      placeholderTextColor={theme.textLight}
                       keyboardType="numeric"
+                      accessibilityLabel={`Horário ${idx + 1}`}
                       maxLength={5}
                       value={time}
                       onChangeText={(t) => { updateTime(idx, t); setFormErrors(e => ({ ...e, times: '' })); }}
                     />
                     {formTimes.length > 1 && (
-                      <Pressable onPress={() => removeTimeSlot(idx)} style={styles.removeTimeBtn}>
-                        <Text style={styles.removeTimeTxt}>✕</Text>
+                      <Pressable onPress={() => removeTimeSlot(idx)} style={styles.removeTimeBtn} accessibilityRole="button" accessibilityLabel="Remover horário">
+                        <Ionicons name="close" size={20} color={theme.error} />
                       </Pressable>
                     )}
                   </View>
                 ))}
-                {formErrors.times ? <Text style={styles.errorMsg}>{formErrors.times}</Text> : null}
-                {formTimes.length < 4 && (
-                  <Pressable onPress={addTimeSlot} style={styles.addTimeBtn}>
-                    <Text style={styles.addTimeTxt}>+ Adicionar horário</Text>
-                  </Pressable>
-                )}
+                {formErrors.times ? <Text style={[styles.errorMsg, { color: theme.error }]}>{formErrors.times}</Text> : null}
+                <Pressable onPress={addTimeSlot} style={styles.addTimeBtn} accessibilityRole="button">
+                  <Text style={[styles.addTimeTxt, { color: theme.primaryDark }]}>+ Adicionar horário</Text>
+                </Pressable>
 
-                {/* Notas */}
-                <Text style={styles.inputLabel}>Notas (opcional)</Text>
+                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Notas (opcional)</Text>
                 <TextInput
-                  style={[styles.input, { height: 60 }]}
+                  style={[styles.input, styles.notesInput, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text, fontFamily: fontPreference === 'system' ? SYSTEM_FONT : Fonts.family.regular, fontSize: Fonts.size.md * textScale }]}
                   placeholder="Observações..."
+                  placeholderTextColor={theme.textLight}
                   multiline
                   value={formNotes}
                   onChangeText={setFormNotes}
                 />
 
-                {formErrors.submit ? <Text style={styles.errorMsg}>{formErrors.submit}</Text> : null}
+                {formErrors.submit ? <Text style={[styles.errorMsg, { color: theme.error }]}>{formErrors.submit}</Text> : null}
 
-                {/* Botões */}
                 <View style={styles.modalButtons}>
-                  <Pressable style={[styles.btn, styles.btnCancel]} onPress={closeModal} disabled={saving}>
-                    <Text>Cancelar</Text>
+                  <Pressable style={[styles.btn, { backgroundColor: theme.background, borderColor: theme.border }]} onPress={closeModal} disabled={saving}>
+                    <Text style={[styles.buttonText, { color: theme.text }]}>Cancelar</Text>
                   </Pressable>
-                  <Pressable style={[styles.btn, styles.btnSave]} onPress={handleAddMedication} disabled={saving}>
-                    <Text style={{ color: '#FFF', fontFamily: Fonts.family.bold }}>
+                  <Pressable style={[styles.btn, { backgroundColor: actionColor, borderColor: actionColor }]} onPress={handleAddMedication} disabled={saving}>
+                    <Text style={[styles.buttonText, { color: theme.textOnPrimary }]}>
                       {saving ? 'Salvando…' : 'Salvar'}
                     </Text>
                   </Pressable>
@@ -449,7 +539,6 @@ export default function MedicationsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   center: {
     justifyContent: 'center',
@@ -459,18 +548,15 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: Spacing.sm,
     fontFamily: Fonts.family.regular,
-    color: Colors.textSecondary,
     fontSize: Fonts.size.sm,
   },
   errorText: {
     fontFamily: Fonts.family.regular,
-    color: Colors.error,
     fontSize: Fonts.size.md,
     textAlign: 'center',
     marginBottom: Spacing.md,
   },
   retryBtn: {
-    backgroundColor: Colors.primary,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.sm,
@@ -481,45 +567,66 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: Spacing.md,
-    paddingBottom: 100,
+    paddingBottom: Spacing.xl,
   },
+  pageIntro: { marginBottom: Spacing.lg, minWidth: 0 },
+  introSubtitle: { fontSize: Fonts.size.sm, fontFamily: Fonts.family.regular, lineHeight: 22 },
   sectionTitle: {
     fontSize: Fonts.size.lg,
     fontFamily: Fonts.family.bold,
-    color: Colors.text,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs,
   },
+  summaryCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    elevation: 3,
+    shadowColor: '#123A39',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+  },
+  summaryTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: Spacing.sm },
+  summaryCopy: { flex: 1, minWidth: 0 },
+  summaryEyebrow: { color: '#FFFFFFB8', fontSize: 10, letterSpacing: 1.1, fontFamily: Fonts.family.bold },
+  summaryNumber: { color: '#FFFFFF', fontSize: 38, lineHeight: 48, fontFamily: Fonts.family.bold, marginTop: Spacing.sm },
+  summaryLabel: { color: '#FFFFFF', fontSize: Fonts.size.sm, fontFamily: Fonts.family.regular, lineHeight: 21 },
+  summaryIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FFFFFF20', alignItems: 'center', justifyContent: 'center' },
+  addButton: { minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: Spacing.sm, borderRadius: BorderRadius.md, marginBottom: Spacing.lg, paddingHorizontal: Spacing.md },
+  addButtonText: { color: '#FFFFFF', fontSize: Fonts.size.sm, fontFamily: Fonts.family.bold, textAlign: 'center', flexShrink: 1 },
+  listHeading: { marginBottom: Spacing.sm, minWidth: 0 },
+  listTitle: { fontSize: Fonts.size.md, fontFamily: Fonts.family.bold },
+  listSubtitle: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular, lineHeight: 18, marginTop: 3 },
   medCard: {
-    marginBottom: 0,
+    padding: Spacing.md,
   },
   medHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
   },
+  medIcon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   medInfo: {
     flex: 1,
+    minWidth: 0,
   },
   medName: {
     fontSize: Fonts.size.lg,
     fontFamily: Fonts.family.bold,
-    color: Colors.text,
   },
   medDosage: {
     fontSize: Fonts.size.sm,
     fontFamily: Fonts.family.regular,
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   medTimes: {
     fontSize: Fonts.size.sm,
     fontFamily: Fonts.family.regular,
-    color: Colors.primary,
     marginTop: 4,
   },
   medNotes: {
     fontSize: Fonts.size.xs,
     fontFamily: Fonts.family.italic,
-    color: Colors.textLight,
     marginTop: 4,
   },
   actions: {
@@ -529,39 +636,27 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    paddingVertical: Spacing.sm,
+    minWidth: 0,
+    minHeight: 48,
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
     borderRadius: BorderRadius.sm,
     alignItems: 'center',
-  },
-  takenBtn: {
-    backgroundColor: Colors.success + '15',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.success + '40',
   },
-  missedBtn: {
-    backgroundColor: Colors.error + '15',
-    borderWidth: 1,
-    borderColor: Colors.error + '40',
-  },
-  takenText: {
-    color: Colors.success,
-    fontFamily: Fonts.family.bold,
-    fontSize: Fonts.size.sm,
-  },
-  missedText: {
-    color: Colors.error,
-    fontFamily: Fonts.family.bold,
-    fontSize: Fonts.size.sm,
-  },
+  actionText: { fontFamily: Fonts.family.bold, fontSize: Fonts.size.xs, flexShrink: 1 },
   todayLogs: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.xs,
     marginTop: Spacing.sm,
   },
   statusBadge: {
     paddingVertical: 2,
     paddingHorizontal: 10,
-    borderRadius: 999,
+    borderRadius: BorderRadius.sm,
   },
   statusText: {
     fontSize: Fonts.size.xs,
@@ -570,26 +665,13 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     fontFamily: Fonts.family.regular,
-    color: Colors.textSecondary,
     fontSize: Fonts.size.md,
-    marginTop: Spacing.xl,
+    marginTop: Spacing.xs,
     lineHeight: 22,
   },
-  // --- FAB ---
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-  },
-  fabIcon: { color: '#FFF', fontSize: 24, fontFamily: Fonts.family.bold },
-  // --- Modal ---
+  emptyCard: { alignItems: 'center', padding: Spacing.lg },
+  emptyIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
+  emptyTitle: { fontSize: Fonts.size.md, fontFamily: Fonts.family.bold, textAlign: 'center' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -598,36 +680,38 @@ const styles = StyleSheet.create({
   modalScroll: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: Spacing.md,
   },
-  modalContent: { backgroundColor: '#FFF', borderRadius: 12, padding: 20 },
-  modalTitle: { fontSize: 18, fontFamily: Fonts.family.bold, marginBottom: 20, textAlign: 'center' as const },
-  inputLabel: { fontSize: 12, fontFamily: Fonts.family.regular, color: Colors.textSecondary, marginBottom: 5, marginTop: 4 },
-  input: { backgroundColor: '#F5F5F5', borderRadius: 8, padding: 12, marginBottom: 4, fontFamily: Fonts.family.regular },
-  inputError: { borderWidth: 1, borderColor: Colors.error },
-  errorMsg: { color: Colors.error, fontSize: 11, marginBottom: 8 },
-  // --- Frequência ---
-  freqRow: { flexDirection: 'row' as const, gap: 8, marginBottom: 8 },
+  modalContent: { width: '100%', maxWidth: 480, alignSelf: 'center', borderRadius: BorderRadius.lg, padding: Spacing.md },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md, gap: Spacing.sm },
+  modalTitle: { flex: 1, minWidth: 0, fontSize: Fonts.size.lg, fontFamily: Fonts.family.bold },
+  closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  inputLabel: { fontSize: 12, fontFamily: Fonts.family.regular, marginBottom: 5, marginTop: 4 },
+  input: { minHeight: 48, borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 4, fontFamily: Fonts.family.regular },
+  notesInput: { minHeight: 80, textAlignVertical: 'top' },
+  errorMsg: { fontSize: 11, marginBottom: 8 },
+  freqRow: { flexDirection: 'row' as const, flexWrap: 'wrap', gap: 6, marginBottom: 8 },
   freqBtn: {
-    flex: 1,
-    paddingVertical: 10,
+    flexBasis: '22%',
+    flexGrow: 1,
+    minWidth: 0,
+    minHeight: 44,
+    paddingHorizontal: 2,
     borderRadius: 8,
-    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
     alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
-  freqBtnActive: { backgroundColor: Colors.primary },
-  freqText: { fontSize: 13, fontFamily: Fonts.family.regular, color: Colors.textSecondary },
-  freqTextActive: { color: '#FFF', fontFamily: Fonts.family.bold },
-  // --- Horários ---
+  freqBtnMore: { flexBasis: '100%' },
+  freqText: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.bold, textAlign: 'center' },
   timeRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 4 },
-  timeInput: { flex: 1 },
-  removeTimeBtn: { padding: 8 },
-  removeTimeTxt: { color: Colors.error, fontSize: 16, fontFamily: Fonts.family.bold },
+  timeIndex: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  timeIndexText: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.bold },
+  timeInput: { flex: 1, minWidth: 0 },
+  removeTimeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   addTimeBtn: { marginBottom: 12 },
-  addTimeTxt: { color: Colors.primary, fontSize: 13, fontFamily: Fonts.family.bold },
-  // --- Botões ---
-  modalButtons: { flexDirection: 'row' as const, gap: 10, marginTop: 12 },
-  btn: { flex: 1, padding: 15, borderRadius: 8, alignItems: 'center' as const },
-  btnCancel: { backgroundColor: '#EEE' },
-  btnSave: { backgroundColor: Colors.primary },
+  addTimeTxt: { fontSize: 13, fontFamily: Fonts.family.bold },
+  modalButtons: { flexDirection: 'row' as const, gap: Spacing.sm, marginTop: Spacing.md },
+  btn: { flex: 1, minWidth: 0, minHeight: 48, paddingHorizontal: Spacing.xs, borderRadius: 8, borderWidth: 1, alignItems: 'center' as const, justifyContent: 'center' as const },
+  buttonText: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.bold, textAlign: 'center' },
 });

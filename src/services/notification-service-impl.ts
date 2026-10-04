@@ -116,6 +116,35 @@ export class NotificationServiceImpl implements INotificationService {
   public getAll(): AppNotification[] {
     return Array.from(this.notifications.values());
   }
+
+  public async cancelMedicationReminders(): Promise<void> {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(scheduled
+      .filter((item) => item.content.data?.type === 'medication_reminder')
+      .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
+    for (const [id, notification] of this.notifications) {
+      if (notification.type === 'medication_reminder') {
+        this.notifications.delete(id);
+        this.notificationIds.delete(id);
+      }
+    }
+  }
+
+  public async reconcileMedicationReminders(activeMedicationIds: string[]): Promise<void> {
+    const active = new Set(activeMedicationIds);
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(scheduled
+      .filter((item) => item.content.data?.type === 'medication_reminder' &&
+        (typeof item.content.data.relatedId !== 'string' || !active.has(item.content.data.relatedId)))
+      .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
+    for (const [id, notification] of this.notifications) {
+      if (notification.type === 'medication_reminder' &&
+        (!notification.relatedId || !active.has(notification.relatedId))) {
+        this.notifications.delete(id);
+        this.notificationIds.delete(id);
+      }
+    }
+  }
 }
 
 export const notificationService = NotificationServiceImpl.getInstance();

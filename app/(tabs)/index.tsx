@@ -1,78 +1,120 @@
-import { Card, ThemeToggleButton } from '@/components';
-import { Fonts, Spacing, BorderRadius } from '@/constants/theme';
-import { WeightRecord, WeightChartData, WeightSummary } from '@/src/models/weight';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { Card } from '@/components';
+import { AppText as Text, SYSTEM_FONT } from '@/components/app-text';
+import { BorderRadius, Fonts, Spacing } from '@/constants/theme';
+import { WeightChartData, WeightRecord, WeightSummary } from '@/src/models/weight';
 import { weightService } from '@/src/services';
 import { useTheme } from '@/src/context/ThemeContext';
-import React, { useEffect, useState } from 'react';
+import { parseLocalDate, toLocalDateISO } from '@/src/utils/date';
+import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from 'react-native';
 
-// --- SUB-COMPONENTES INTERNOS ---
-
-const TrendBadge = ({ trend }: { trend: string }) => {
+function TrendBadge({ trend }: { trend: string }) {
   const { theme } = useTheme();
-
-  const config = {
-    loss: { label: '↓ Perda', color: theme.success },
-    gain: { label: '↑ Ganho', color: theme.error },
-    stable: { label: '→ Estável', color: theme.info },
-  }[trend] ?? { label: '→ Estável', color: theme.info };
+  const labels: Record<string, string> = {
+    loss: 'Perda',
+    gain: 'Ganho',
+    stable: 'Estável',
+  };
+  const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+    loss: 'arrow-down',
+    gain: 'arrow-up',
+    stable: 'remove',
+  };
 
   return (
-    <View style={[styles.badge, { backgroundColor: config.color + '20' }]}>
-      <Text style={[styles.badgeText, { color: config.color }]}>{config.label}</Text>
+    <View style={[styles.trendBadge, { backgroundColor: theme.textOnPrimary + '18' }]}>
+      <Ionicons name={icons[trend] ?? 'remove'} size={14} color={theme.textOnPrimary} />
+      <Text style={[styles.trendBadgeText, { color: theme.textOnPrimary }]}>{labels[trend] ?? 'Estável'}</Text>
     </View>
   );
-};
+}
 
-const MiniChart = ({ data }: { data: WeightChartData[] }) => {
+function WeightSummaryCard({ summary }: { summary: WeightSummary }) {
   const { theme } = useTheme();
+  const difference = `${summary.difference > 0 ? '+' : ''}${summary.difference} kg`;
 
-  if (!data || !data.length) return null;
-  const values = data.map((d) => d.value);
+  return (
+    <View style={[styles.summaryCard, { backgroundColor: theme.primary }]}>
+      <View style={styles.summaryTopRow}>
+        <View style={styles.summaryTextBlock}>
+          <Text style={[styles.summaryEyebrow, { color: theme.textOnPrimary }]}>SEU ACOMPANHAMENTO</Text>
+          <Text style={[styles.summaryTitle, { color: theme.textOnPrimary }]}>Peso atual</Text>
+        </View>
+        <View style={styles.scaleIcon}>
+          <Ionicons name="scale-outline" size={23} color={theme.textOnPrimary} />
+        </View>
+      </View>
+
+      <View style={styles.currentWeightRow}>
+        <Text style={[styles.currentWeight, { color: theme.textOnPrimary }]}>{summary.current}</Text>
+        <Text style={[styles.weightUnit, { color: theme.textOnPrimary }]}>kg</Text>
+      </View>
+
+      <View style={[styles.summaryFooter, { borderTopColor: theme.textOnPrimary + '30' }]}>
+        <View style={styles.variationBlock}>
+          <Text style={[styles.variationLabel, { color: theme.textOnPrimary }]}>Variação recente</Text>
+          <Text style={[styles.variationValue, { color: theme.textOnPrimary }]}>{difference}</Text>
+        </View>
+        <TrendBadge trend={summary.trend} />
+      </View>
+      <Text style={[styles.comparisonHint, { color: theme.textOnPrimary }]}>Comparado ao registro anterior</Text>
+    </View>
+  );
+}
+
+function MiniChart({ data }: { data: WeightChartData[] }) {
+  const { theme, textScale } = useTheme();
+  if (data.length === 0) return null;
+
+  const values = data.map((item) => item.value);
   const max = Math.max(...values);
   const min = Math.min(...values);
   const range = max - min || 1;
 
   return (
-    <View style={styles.chartBars}>
-      {data.map((item, index) => (
-        <View key={index} style={styles.chartColumn}>
-          <Text style={[styles.chartValue, { color: theme.textSecondary }]}>{item.value}</Text>
-          <View
-            style={[
-              styles.chartBar,
-              {
-                height: ((item.value - min) / range) * 60 + 20,
-                backgroundColor: theme.primary,
-              },
-            ]}
-          />
-          <Text style={[styles.chartLabel, { color: theme.textSecondary }]}>{item.label}</Text>
-        </View>
-      ))}
-    </View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <View style={[styles.chartBars, { width: Math.max(data.length * 72 * textScale, 240), height: 124 * textScale }]}>
+        {data.map((item, index) => (
+          <View key={`${item.label}-${index}`} style={[styles.chartColumn, { minWidth: 56 * textScale }]}>
+            <Text style={[styles.chartValue, { color: theme.textSecondary }]}>
+              {item.value}
+            </Text>
+            <View
+              style={[
+                styles.chartBar,
+                {
+                  height: ((item.value - min) / range) * 60 + 20,
+                  backgroundColor: theme.primary,
+                },
+              ]}
+            />
+            <Text style={[styles.chartLabel, { color: theme.textSecondary }]}>
+              {item.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
-};
-
-// --- TELA PRINCIPAL ---
+}
 
 export default function WeightScreen() {
-  const { theme, themeType } = useTheme();
-
-  // Verifica se o tema atual é o secundário (E-SUS/SMS)
-  const isEsus = themeType === 'secondary' || theme.primary === '#25696A';
+  const { theme, currentTheme, fontPreference, textScale, weightReminder } = useTheme();
+  const isEsus = currentTheme === 'secondary';
 
   const [records, setRecords] = useState<WeightRecord[]>([]);
   const [chartData, setChartData] = useState<WeightChartData[]>([]);
@@ -85,7 +127,7 @@ export default function WeightScreen() {
   const [reminderMsg, setReminderMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -103,7 +145,7 @@ export default function WeightScreen() {
 
       if (reminder.shouldRemind) {
         setReminderMsg(
-          `Faz ${reminder.lastDays} dias que você não registra seu peso. Vamos atualizar?`
+          `Faz ${reminder.lastDays} dias que você não registra seu peso. Vamos atualizar?`,
         );
       } else {
         setReminderMsg(null);
@@ -115,11 +157,9 @@ export default function WeightScreen() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadData();
   }, []);
+
+  useFocusEffect(useCallback(() => { void loadData(); }, [loadData]));
 
   const handleSave = async () => {
     if (!value.trim()) {
@@ -137,9 +177,8 @@ export default function WeightScreen() {
       setSaving(true);
       setError(null);
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateISO();
       await weightService.addRecord(weightValue, today, notes || undefined);
-
       await loadData();
 
       setValue('');
@@ -156,25 +195,17 @@ export default function WeightScreen() {
 
   if (loading && records.length === 0) {
     return (
-      <View style={[styles.screen, { backgroundColor: theme.background }]}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-            Carregando registros...
-          </Text>
-        </View>
+      <View style={[styles.loadingScreen, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primaryDark} />
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+          Carregando seu acompanhamento...
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      {error && (
-        <View style={[styles.errorBanner, { backgroundColor: theme.error + '20' }]}>
-          <Text style={[styles.errorText, { color: theme.error }]}>⚠️ {error}</Text>
-        </View>
-      )}
-
       <FlatList
         data={records}
         keyExtractor={(item) => item.id}
@@ -183,12 +214,21 @@ export default function WeightScreen() {
         onRefresh={loadData}
         ListHeaderComponent={
           <>
-            {/* Botão de Alternância de Tema */}
-            <View style={styles.toggleContainer}>
-              <ThemeToggleButton />
+            <View style={styles.topActions}>
+              <View style={styles.intro}>
+                <Text style={[styles.introTitle, { color: theme.text }]}>Acompanhe sua evolução</Text>
+                <Text style={[styles.introSubtitle, { color: theme.textSecondary }]}>Seus registros de peso em um só lugar.</Text>
+              </View>
             </View>
 
-            {reminderMsg && (
+            {error && (
+              <View style={[styles.errorBanner, { backgroundColor: theme.error + '18' }]}>
+                <Ionicons name="alert-circle-outline" size={18} color={theme.error} />
+                <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
+              </View>
+            )}
+
+            {weightReminder && reminderMsg && (
               <Pressable
                 style={[
                   styles.reminderBanner,
@@ -198,93 +238,107 @@ export default function WeightScreen() {
                   setReminderMsg(null);
                   setModalVisible(true);
                 }}
+                accessibilityRole="button"
               >
-                <Text style={[styles.reminderText, { color: theme.text }]}>⚠️ {reminderMsg}</Text>
-                <Text style={[styles.reminderAction, { color: isEsus ? theme.secondary : theme.primary }]}>
-                  Registrar agora
-                </Text>
+                <View style={styles.reminderIcon}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={20}
+                    color={isEsus ? theme.secondary : theme.primaryDark}
+                  />
+                </View>
+                <View style={styles.reminderContent}>
+                  <Text style={[styles.reminderTitle, { color: theme.text }]}>Hora de atualizar</Text>
+                  <Text style={[styles.reminderText, { color: theme.textSecondary }]}>{reminderMsg}</Text>
+                  <Text style={[styles.reminderAction, { color: isEsus ? theme.secondary : theme.primaryDark }]}>
+                    Registrar agora
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={isEsus ? theme.secondary : theme.primaryDark}
+                />
               </Pressable>
             )}
 
-            {summary && (
-              <Card title="Resumo" style={styles.summaryCard}>
-                <View style={styles.summaryRow}>
-                  <View style={styles.summaryItem}>
-                    <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Atual</Text>
-                    <Text style={[styles.summaryValue, { color: theme.text }]}>{summary.current}kg</Text>
-                  </View>
-                  <View style={styles.summaryItem}>
-                    <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Variação</Text>
-                    <Text
-                      style={[
-                        styles.summaryValue,
-                        {
-                          color: summary.difference <= 0 ? theme.success : theme.error,
-                        },
-                      ]}
-                    >
-                      {summary.difference > 0 ? '+' : ''}
-                      {summary.difference}kg
-                    </Text>
-                  </View>
+            {summary ? (
+              <WeightSummaryCard summary={summary} />
+            ) : (
+              <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <View style={[styles.emptyIcon, { backgroundColor: theme.tagBackground }]}>
+                  <Ionicons name="scale-outline" size={28} color={theme.primaryDark} />
                 </View>
-                <TrendBadge trend={summary.trend} />
-              </Card>
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>Comece seu acompanhamento</Text>
+                <Text style={[styles.emptyDescription, { color: theme.textSecondary }]}>Registre seu primeiro peso para visualizar sua evolução por aqui.</Text>
+              </View>
             )}
 
+            <TouchableOpacity
+              style={[styles.registerButton, { backgroundColor: isEsus ? theme.secondary : theme.primary }]}
+              onPress={() => setModalVisible(true)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Registrar peso"
+            >
+              <Ionicons name="add" size={21} color={theme.textOnPrimary} />
+              <Text style={[styles.registerButtonText, { color: theme.textOnPrimary }]}>Registrar peso</Text>
+            </TouchableOpacity>
+
             {chartData.length > 0 && (
-              <Card title="Evolução" style={styles.chartCard}>
+              <Card style={styles.chartCard}>
+                <View style={styles.cardHeading}>
+                  <View style={styles.headingText}>
+                    <Text style={[styles.cardTitle, { color: theme.text }]}>Sua evolução</Text>
+                    <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>Acompanhe os registros ao longo do tempo</Text>
+                  </View>
+                  <Ionicons name="stats-chart-outline" size={21} color={theme.primaryDark} />
+                </View>
                 <MiniChart data={chartData} />
               </Card>
             )}
 
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Histórico de Registros</Text>
+            <View style={styles.historyHeading}>
+              <View style={styles.headingText}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Histórico de pesagem</Text>
+                <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>Do registro mais recente ao mais antigo</Text>
+              </View>
+              {records.length > 0 && (
+                <View style={[styles.countBadge, { backgroundColor: theme.tagBackground }]}>
+                  <Text style={[styles.countText, { color: theme.primaryDark }]}>{records.length}</Text>
+                </View>
+              )}
+            </View>
           </>
         }
         renderItem={({ item }) => (
           <Card style={styles.recordCard}>
             <View style={styles.recordRow}>
-              <View>
-                <Text style={[styles.recordWeight, { color: theme.primary }]}>{item.value} kg</Text>
-                <Text style={[styles.recordDate, { color: theme.textSecondary }]}>
-                  {new Date(item.date).toLocaleDateString('pt-BR')}
-                </Text>
+              <View style={[styles.recordIcon, { backgroundColor: theme.tagBackground }]}>
+                <Ionicons name="scale-outline" size={20} color={theme.primaryDark} />
               </View>
-              {item.notes && (
-                <Text style={[styles.recordNotes, { color: theme.textLight }]} numberOfLines={2}>
-                  {item.notes}
+              <View style={styles.recordInfo}>
+                <Text style={[styles.recordWeight, { color: theme.text }]}>{item.value} kg</Text>
+                <Text style={[styles.recordDate, { color: theme.textSecondary }]}>
+                  {parseLocalDate(item.date).toLocaleDateString('pt-BR')}
                 </Text>
-              )}
+                {item.notes ? (
+                  <Text style={[styles.recordNotes, { color: theme.textSecondary }]}>
+                    {item.notes}
+                  </Text>
+                ) : null}
+              </View>
             </View>
           </Card>
         )}
+        ItemSeparatorComponent={() => <View style={styles.recordSeparator} />}
         ListEmptyComponent={
           !loading ? (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                Nenhum registro de peso ainda
-              </Text>
-              <Text style={[styles.emptySubtext, { color: theme.textLight }]}>
-                Clique no + para começar
-              </Text>
-            </View>
+            <Text style={[styles.emptyListText, { color: theme.textSecondary }]}>Nenhum registro por enquanto.</Text>
           ) : null
         }
       />
 
-      {/* Botão Flutuante (FAB) - Laranja no E-SUS / Azul  */}
-      <TouchableOpacity
-        style={[
-          styles.fab,
-          { backgroundColor: isEsus ? theme.secondary : theme.primary },
-        ]}
-        onPress={() => setModalVisible(true)}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.fabIcon}>+</Text>
-      </TouchableOpacity>
-
-      {/* Modal de Cadastro */}
       {modalVisible && (
         <Modal visible={modalVisible} transparent animationType="slide">
           <KeyboardAvoidingView
@@ -296,12 +350,23 @@ export default function WeightScreen() {
               onPress={() => !saving && setModalVisible(false)}
             />
             <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Novo Registro</Text>
+              <ScrollView contentContainerStyle={styles.modalInner} keyboardShouldPersistTaps="handled">
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Novo registro</Text>
+                <Pressable
+                  onPress={() => !saving && setModalVisible(false)}
+                  style={styles.closeButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Fechar"
+                >
+                  <Ionicons name="close" size={22} color={theme.textSecondary} />
+                </Pressable>
+              </View>
 
               <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Peso (kg)</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text }]}
-                placeholder="Ex: 80.5"
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, fontFamily: fontPreference === 'system' ? SYSTEM_FONT : Fonts.family.regular, fontSize: Fonts.size.md * textScale }]}
+                placeholder="Ex.: 80,5"
                 placeholderTextColor={theme.textLight}
                 keyboardType="decimal-pad"
                 value={value}
@@ -309,13 +374,10 @@ export default function WeightScreen() {
                 editable={!saving}
               />
 
-              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Notas (opcional)</Text>
+              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Anotação (opcional)</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  { height: 60, backgroundColor: theme.background, color: theme.text },
-                ]}
-                placeholder="Como se sente hoje?"
+                style={[styles.input, styles.notesInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, fontFamily: fontPreference === 'system' ? SYSTEM_FONT : Fonts.family.regular, fontSize: Fonts.size.md * textScale }]}
+                placeholder="Adicione uma observação"
                 placeholderTextColor={theme.textLight}
                 multiline
                 value={notes}
@@ -323,32 +385,29 @@ export default function WeightScreen() {
                 editable={!saving}
               />
 
+              {error && <Text style={[styles.formError, { color: theme.error }]}>{error}</Text>}
+
               <View style={styles.modalButtons}>
                 <Pressable
-                  style={[styles.btn, styles.btnCancel, { backgroundColor: theme.border }]}
+                  style={[styles.btn, styles.btnCancel, { backgroundColor: theme.background, borderColor: theme.border }]}
                   onPress={() => setModalVisible(false)}
                   disabled={saving}
                 >
-                  <Text style={{ color: theme.text }}>Cancelar</Text>
+                  <Text style={[styles.buttonLabel, { color: theme.text }]}>Cancelar</Text>
                 </Pressable>
                 <Pressable
-                  style={[
-                    styles.btn,
-                    { backgroundColor: isEsus ? theme.secondary : theme.primary },
-                    saving && styles.btnDisabled,
-                  ]}
+                  style={[styles.btn, { backgroundColor: isEsus ? theme.secondary : theme.primary }, saving && styles.btnDisabled]}
                   onPress={handleSave}
                   disabled={saving}
                 >
                   {saving ? (
-                    <ActivityIndicator size="small" color="#FFF" />
+                    <ActivityIndicator size="small" color={theme.textOnPrimary} />
                   ) : (
-                    <Text style={{ color: '#FFF', fontFamily: Fonts.family.bold }}>
-                      Salvar
-                    </Text>
+                    <Text style={[styles.buttonLabel, styles.saveLabel, { color: theme.textOnPrimary }]}>Salvar</Text>
                   )}
                 </Pressable>
               </View>
+              </ScrollView>
             </View>
           </KeyboardAvoidingView>
         </Modal>
@@ -359,47 +418,141 @@ export default function WeightScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  list: { padding: Spacing.md, paddingBottom: 100 },
-  toggleContainer: { marginBottom: Spacing.sm },
-  summaryCard: { marginBottom: Spacing.md },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  summaryItem: { alignItems: 'center' },
-  summaryLabel: { fontSize: 12 },
-  summaryValue: { fontSize: 22, fontFamily: Fonts.family.bold },
-  badge: { alignSelf: 'center', marginTop: 12, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20 },
-  badgeText: { fontFamily: Fonts.family.bold, fontSize: 12 },
-  chartCard: { marginBottom: Spacing.md },
-  chartBars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 100, marginTop: 10 },
-  chartColumn: { alignItems: 'center' },
-  chartBar: { width: 14, borderRadius: 4 },
-  chartValue: { fontSize: 9, marginBottom: 2 },
-  chartLabel: { fontSize: 9, marginTop: 4 },
-  sectionTitle: { fontSize: 18, fontFamily: Fonts.family.bold, marginVertical: 10 },
-  recordCard: { marginBottom: 8 },
-  recordRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  recordWeight: { fontSize: 18, fontFamily: Fonts.family.bold },
-  recordDate: { fontSize: 12 },
-  recordNotes: { fontSize: 12, maxWidth: '50%', textAlign: 'right' },
-  fab: { position: 'absolute', right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-  fabIcon: { color: '#FFF', fontSize: 24, fontFamily: Fonts.family.bold },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContent: { borderRadius: BorderRadius.md, padding: 20 },
-  modalTitle: { fontSize: 18, fontFamily: Fonts.family.bold, marginBottom: 20, textAlign: 'center' },
-  inputLabel: { fontSize: 12, marginBottom: 5 },
-  input: { borderRadius: 8, padding: 12, marginBottom: 15 },
-  modalButtons: { flexDirection: 'row', gap: 10 },
-  btn: { flex: 1, padding: 15, borderRadius: 8, alignItems: 'center' },
-  btnCancel: {},
-  btnDisabled: { opacity: 0.6 },
-  reminderBanner: { borderRadius: 10, padding: 14, marginBottom: Spacing.md, alignItems: 'center' },
-  reminderText: { fontSize: 14, textAlign: 'center', marginBottom: 6 },
-  reminderAction: { fontSize: 14, fontFamily: Fonts.family.bold },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 10 },
-  errorBanner: { padding: 12, marginHorizontal: Spacing.md, marginTop: Spacing.md, borderRadius: 8 },
-  errorText: { fontFamily: Fonts.family.bold },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
-  emptyText: { fontSize: 16, marginBottom: 8 },
-  emptySubtext: { fontSize: 14 },
-  modalBackdrop: { flex: 1 },
+  list: { padding: Spacing.md, paddingBottom: Spacing.xl },
+  topActions: {
+    alignItems: 'stretch',
+    marginBottom: Spacing.lg,
+  },
+  intro: { minWidth: 0, paddingTop: Spacing.xs, marginBottom: Spacing.sm },
+  introTitle: { fontSize: Fonts.size.lg, fontFamily: Fonts.family.bold, lineHeight: 26 },
+  introSubtitle: { fontSize: Fonts.size.sm, fontFamily: Fonts.family.regular, lineHeight: 21, marginTop: 3 },
+  summaryCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#123A39',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+  },
+  summaryTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  summaryTextBlock: { flex: 1 },
+  summaryEyebrow: { color: '#FFFFFFB8', fontSize: 10, letterSpacing: 1.1, fontFamily: Fonts.family.bold },
+  summaryTitle: { color: '#FFFFFF', fontSize: Fonts.size.md, fontFamily: Fonts.family.bold, marginTop: 4 },
+  scaleIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FFFFFF20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  currentWeightRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', marginTop: Spacing.sm },
+  currentWeight: { color: '#FFFFFF', fontSize: 38, lineHeight: 46, fontFamily: Fonts.family.bold },
+  weightUnit: { color: '#FFFFFFE0', fontSize: Fonts.size.md, fontFamily: Fonts.family.bold, marginLeft: 7 },
+  summaryFooter: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: '#FFFFFF30',
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+  },
+  variationBlock: { flex: 1, minWidth: 0 },
+  variationLabel: { color: '#FFFFFFC7', fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular },
+  variationValue: { color: '#FFFFFF', fontSize: Fonts.size.md, fontFamily: Fonts.family.bold, marginTop: 3 },
+  trendBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+    gap: 5,
+    backgroundColor: '#FFFFFF24',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+  },
+  trendBadgeText: { color: '#FFFFFF', fontFamily: Fonts.family.bold, fontSize: Fonts.size.xs },
+  comparisonHint: { color: '#FFFFFFA8', fontSize: 10, fontFamily: Fonts.family.regular, marginTop: Spacing.sm },
+  emptyCard: {
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  emptyIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
+  emptyTitle: { fontSize: Fonts.size.md, fontFamily: Fonts.family.bold, textAlign: 'center' },
+  emptyDescription: { fontSize: Fonts.size.sm, fontFamily: Fonts.family.regular, lineHeight: 21, textAlign: 'center', marginTop: Spacing.xs },
+  chartCard: { marginBottom: Spacing.md, padding: Spacing.md, overflow: 'hidden' },
+  cardHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
+  headingText: { flex: 1, minWidth: 0 },
+  cardTitle: { fontSize: Fonts.size.md, fontFamily: Fonts.family.bold },
+  cardSubtitle: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular, lineHeight: 18, marginTop: 3 },
+  chartBars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', marginTop: Spacing.md },
+  chartColumn: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
+  chartBar: { width: 16, minHeight: 8, maxHeight: 72, borderRadius: 6, marginTop: 5 },
+  chartValue: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular },
+  chartLabel: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular, marginTop: 5 },
+  historyHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.xs, marginBottom: Spacing.sm },
+  sectionTitle: { fontSize: Fonts.size.md, fontFamily: Fonts.family.bold },
+  countBadge: { minWidth: 28, height: 28, borderRadius: 14, paddingHorizontal: 7, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: Spacing.sm },
+  countText: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.bold },
+  recordCard: { padding: Spacing.md },
+  recordRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  recordIcon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  recordInfo: { flex: 1, minWidth: 0 },
+  recordWeight: { fontSize: Fonts.size.md, fontFamily: Fonts.family.bold },
+  recordDate: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular, marginTop: 2 },
+  recordNotes: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular, lineHeight: 17, marginTop: 5 },
+  recordSeparator: { height: Spacing.sm },
+  emptyListText: { textAlign: 'center', fontSize: Fonts.size.sm, fontFamily: Fonts.family.regular, paddingVertical: Spacing.md },
+  registerButton: {
+    alignSelf: 'stretch',
+    minHeight: 52,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginBottom: Spacing.md,
+    elevation: 5,
+    shadowColor: '#123A39',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 6,
+  },
+  registerButtonText: { color: '#FFFFFF', fontSize: Fonts.size.sm, fontFamily: Fonts.family.bold },
+  loadingScreen: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
+  loadingText: { marginTop: Spacing.sm, fontSize: Fonts.size.sm, fontFamily: Fonts.family.regular },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, padding: Spacing.sm, borderRadius: BorderRadius.sm, marginBottom: Spacing.md },
+  errorText: { flex: 1, fontSize: Fonts.size.xs, fontFamily: Fonts.family.bold },
+  reminderBanner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderRadius: BorderRadius.md, padding: Spacing.md, marginBottom: Spacing.md },
+  reminderIcon: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  reminderContent: { flex: 1 },
+  reminderTitle: { fontSize: Fonts.size.sm, fontFamily: Fonts.family.bold },
+  reminderText: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular, lineHeight: 18, marginTop: 3 },
+  reminderAction: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.bold, marginTop: 6 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'center', padding: Spacing.md },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject },
+  modalContent: { width: '100%', maxWidth: 480, maxHeight: '88%', alignSelf: 'center', borderRadius: BorderRadius.lg, elevation: 8 },
+  modalInner: { padding: Spacing.lg },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
+  modalTitle: { fontSize: Fonts.size.lg, fontFamily: Fonts.family.bold },
+  closeButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 19 },
+  inputLabel: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.bold, marginBottom: 6, marginTop: Spacing.xs },
+  input: { minHeight: 48, borderWidth: 1, borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, marginBottom: Spacing.sm, fontSize: Fonts.size.sm, fontFamily: Fonts.family.regular },
+  notesInput: { minHeight: 84, textAlignVertical: 'top' },
+  formError: { fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular, marginBottom: Spacing.xs },
+  modalButtons: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.sm },
+  btn: { flex: 1, minHeight: 48, paddingHorizontal: Spacing.sm, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center' },
+  btnCancel: { borderWidth: 1 },
+  buttonLabel: { fontSize: Fonts.size.sm, fontFamily: Fonts.family.bold },
+  saveLabel: { color: '#FFFFFF' },
+  btnDisabled: { opacity: 0.65 },
 });

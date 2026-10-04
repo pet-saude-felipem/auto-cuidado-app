@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   TouchableOpacity,
-  Text,
   StyleSheet,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { AppText as Text } from './app-text';
 import { Colors, Fonts, BorderRadius, Shadows, Spacing } from '@/constants/theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';

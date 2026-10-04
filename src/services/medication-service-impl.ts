@@ -1,6 +1,7 @@
 import { Medication, MedicationLog, MedicationStatus } from '@/src/models';
 import { IMedicationService } from './medication-service';
 import { medicationRepository } from '@/src/repositories/medication-repository-impl';
+import { toLocalDateISO } from '@/src/utils/date';
 
 export class MedicationService implements IMedicationService {
   async getAllMedications(): Promise<Medication[]> {
@@ -23,11 +24,11 @@ export class MedicationService implements IMedicationService {
     time: string,
     status: MedicationStatus,
   ): Promise<MedicationLog> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateISO();
     return medicationRepository.createLog({ medicationId, date: today, time, status });
   }
 
-  async getRecentLogs(days = 7): Promise<MedicationLog[]> {
+  async getRecentLogs(days?: number): Promise<MedicationLog[]> {
     return medicationRepository.getLogs(undefined, days);
   }
 }

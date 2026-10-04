@@ -22,13 +22,10 @@ export class MedicationService {
   }
 
   async update(id: string, data: UpdateMedicationInput): Promise<Medication> {
-    await this.getById(id);
+    const current = await this.getById(id);
 
-    if (data.frequency && data.times) {
-      this.validateTimesAgainstFrequency(data.frequency, data.times);
-    } else if (data.times) {
-      const current = await medicationRepository.findById(id);
-      this.validateTimesAgainstFrequency(current!.frequency, data.times);
+    if (data.frequency || data.times) {
+      this.validateTimesAgainstFrequency(data.frequency ?? current.frequency, data.times ?? current.times);
     }
 
     return medicationRepository.update(id, data);
@@ -40,7 +37,12 @@ export class MedicationService {
   }
 
   private validateTimesAgainstFrequency(frequency: string, times: string[]): void {
-    const expected = Number.parseInt(frequency.replace('x', ''), 10);
+    if (frequency === '5+') {
+      if (times.length >= 5) return;
+      throw new BadRequestError('Mais de 4 vezes ao dia exige ao menos 5 horários.');
+    }
+
+    const expected = Number.parseInt(frequency, 10);
     if (times.length !== expected) {
       throw new BadRequestError(
         `A frequência ${frequency} exige exatamente ${expected} horário(s).`,

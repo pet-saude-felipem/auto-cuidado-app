@@ -4,9 +4,43 @@
  */
 
 export const Themes = {
-  // Tema Primário (Vencedor da Enquete: Azul / Verde / Branco Gelo)
+  // Saúde na Palma da Mão: laranja, turquesa e fundo creme da nova interface.
   primary: {
     name: 'primary',
+    primary: '#D88E67',
+    primaryDark: '#984A2E',
+    primaryLight: '#EAB99D',
+
+    secondary: '#00A3AA',
+    secondaryDark: '#00767D',
+
+    accent: '#F47B20',
+
+    background: '#FFF8EF',
+    surface: '#FFFFFF',
+    card: '#FFFFFF',
+
+    text: '#302C2A',
+    textSecondary: '#625C57',
+    textLight: '#8C827B',
+    textOnPrimary: '#FFFFFF',
+
+    border: '#EDE3DA',
+    divider: '#F1E7DE',
+
+    success: '#00767D',
+    warning: '#B66A38',
+    error: '#B53E35',
+    info: '#00767D',
+
+    tabBar: '#FFFFFF',
+    tabBarInactive: '#8C827B',
+    tabBarActive: '#984A2E',
+    tagBackground: '#FFF0E7',
+  },
+
+  blue: {
+    name: 'blue',
     primary: '#1E56A0',
     primaryDark: '#1B4980',
     primaryLight: '#4A90D9',
@@ -16,7 +50,7 @@ export const Themes = {
 
     accent: '#F5A623',
 
-    background: '#F5F7FA', // Branco Gelo
+    background: '#F5F7FA',
     surface: '#FFFFFF',
     card: '#FFFFFF',
 
@@ -75,7 +109,7 @@ export const Themes = {
   },
 };
 
-export type ThemeType = 'primary' | 'secondary';
+export type ThemeType = 'primary' | 'blue' | 'secondary';
 
 // Mantido para compatibilidade com partes antigas do código
 export const Colors = Themes.primary;

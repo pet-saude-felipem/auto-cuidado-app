@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Fonts, BorderRadius, Shadows, Spacing } from '@/constants/theme';
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import { AppText as Text } from './app-text';
+import { Fonts, BorderRadius, Shadows, Spacing } from '@/constants/theme';
+import { useTheme } from '@/src/context/ThemeContext';
 
 interface CardProps {
   title?: string;
@@ -9,9 +11,10 @@ interface CardProps {
 }
 
 export function Card({ title, children, style }: CardProps) {
+  const { theme } = useTheme();
   return (
-    <View style={[styles.container, style]}>
-      {title && <Text style={styles.title}>{title}</Text>}
+    <View style={[styles.container, { backgroundColor: theme.card }, style]}>
+      {title && <Text style={[styles.title, { color: theme.text }]}>{title}</Text>}
       {children}
     </View>
   );
@@ -19,7 +22,6 @@ export function Card({ title, children, style }: CardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.card,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     ...Shadows.card,
@@ -27,7 +29,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: Fonts.size.lg,
     fontFamily: Fonts.family.bold,
-    color: Colors.text,
     marginBottom: Spacing.sm,
   },
 });
